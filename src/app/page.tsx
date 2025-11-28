@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import QuakeInput from '@/components/QuakeInput';
 import Parameters from '@/components/Parameters';
 import ModelSelector from '@/components/ModelSelector';
@@ -39,6 +39,15 @@ export default function Home() {
   // State for results and errors
   const [results, setResults] = useState<CalculationResults | null>(null);
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
+
+  // Initialize start time to current time on mount (client-side only)
+  useEffect(() => {
+    // Only set if not already populated (e.g., from GeoNet load)
+    if (!startTime) {
+      setStartTime(new Date().toISOString());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
 
   // Derived state: can we calculate?
   const canCalculate = useMemo(() => {

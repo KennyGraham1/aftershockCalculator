@@ -1,6 +1,6 @@
 'use client';
 
-import { useId } from 'react';
+import { useId, useCallback } from 'react';
 
 interface ParametersProps {
   magnitude: string;
@@ -17,18 +17,41 @@ interface ParametersProps {
 }
 
 /**
- * Safely format an ISO date string to datetime-local input format
+ * Format a Date to datetime-local input format (YYYY-MM-DDTHH:MM) in local timezone
  */
-function formatDateTimeLocal(isoString: string): string {
-  if (!isoString) return '';
+function formatDateTimeLocal(dateOrString: Date | string): string {
+  if (!dateOrString) return '';
   try {
-    const date = new Date(isoString);
+    const date = typeof dateOrString === 'string' ? new Date(dateOrString) : dateOrString;
     if (isNaN(date.getTime())) return '';
-    return date.toISOString().slice(0, 16);
+    // Format in local timezone for datetime-local input
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   } catch {
     return '';
   }
 }
+
+/**
+ * Parse datetime-local input value to ISO string
+ */
+function parseLocalToISO(localDateTime: string): string {
+  if (!localDateTime) return '';
+  try {
+    // datetime-local is in format YYYY-MM-DDTHH:MM
+    const date = new Date(localDateTime);
+    if (isNaN(date.getTime())) return '';
+    return date.toISOString();
+  } catch {
+    return '';
+  }
+}
+
+
 
 const DURATION_LABELS = ['Short-term', 'Medium-term', 'Long-term'] as const;
 const MAG_RANGE_LABELS = { m1: 'M1 (highest)', m2: 'M2 (middle)', m3: 'M3 (lowest)' } as const;
@@ -52,6 +75,22 @@ export default function Parameters({
                       focus:outline-none focus:ring-2 focus:ring-blue-500
                       dark:bg-gray-800 dark:text-gray-100
                       disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed`;
+
+  const handleQuakeTimeChange = useCallback((value: string) => {
+    onQuakeTimeChange(parseLocalToISO(value));
+  }, [onQuakeTimeChange]);
+
+  const handleStartTimeChange = useCallback((value: string) => {
+    onStartTimeChange(parseLocalToISO(value));
+  }, [onStartTimeChange]);
+
+  const setQuakeTimeToNow = useCallback(() => {
+    onQuakeTimeChange(new Date().toISOString());
+  }, [onQuakeTimeChange]);
+
+  const setStartTimeToNow = useCallback(() => {
+    onStartTimeChange(new Date().toISOString());
+  }, [onStartTimeChange]);
 
   return (
     <fieldset
@@ -93,16 +132,28 @@ export default function Parameters({
           >
             Quake Time
           </label>
-          <input
-            id={`${baseId}-quake-time`}
-            type="datetime-local"
-            value={formatDateTimeLocal(quakeTime)}
-            onChange={(e) => onQuakeTimeChange(e.target.value)}
-            className={inputClass}
-            aria-describedby={`${baseId}-quake-time-hint`}
-          />
+          <div className="flex gap-2">
+            <input
+              id={`${baseId}-quake-time`}
+              type="datetime-local"
+              value={formatDateTimeLocal(quakeTime)}
+              onChange={(e) => handleQuakeTimeChange(e.target.value)}
+              className={inputClass}
+              aria-describedby={`${baseId}-quake-time-hint`}
+            />
+            <button
+              type="button"
+              onClick={setQuakeTimeToNow}
+              className="px-3 py-2 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300
+                         hover:bg-gray-300 dark:hover:bg-gray-600 rounded-md transition-colors
+                         focus:outline-none focus:ring-2 focus:ring-blue-500 whitespace-nowrap"
+              title="Set to current time"
+            >
+              Now
+            </button>
+          </div>
           <p id={`${baseId}-quake-time-hint`} className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            When the earthquake occurred
+            When the earthquake occurred (local time)
           </p>
         </div>
       </div>
@@ -115,16 +166,28 @@ export default function Parameters({
           >
             Forecast Start Time
           </label>
-          <input
-            id={`${baseId}-start-time`}
-            type="datetime-local"
-            value={formatDateTimeLocal(startTime)}
-            onChange={(e) => onStartTimeChange(e.target.value)}
-            className={inputClass}
-            aria-describedby={`${baseId}-start-time-hint`}
-          />
+          <div className="flex gap-2">
+            <input
+              id={`${baseId}-start-time`}
+              type="datetime-local"
+              value={formatDateTimeLocal(startTime)}
+              onChange={(e) => handleStartTimeChange(e.target.value)}
+              className={inputClass}
+              aria-describedby={`${baseId}-start-time-hint`}
+            />
+            <button
+              type="button"
+              onClick={setStartTimeToNow}
+              className="px-3 py-2 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300
+                         hover:bg-gray-300 dark:hover:bg-gray-600 rounded-md transition-colors
+                         focus:outline-none focus:ring-2 focus:ring-blue-500 whitespace-nowrap"
+              title="Set to current time"
+            >
+              Now
+            </button>
+          </div>
           <p id={`${baseId}-start-time-hint`} className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            When the forecast period begins
+            When the forecast period begins (local time)
           </p>
         </div>
         <div>
