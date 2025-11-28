@@ -19,6 +19,17 @@ interface ValidationError {
   message: string;
 }
 
+// Demo earthquake data - 2016 M7.8 Kaikoura earthquake
+// This is a well-known NZ earthquake that makes a good example
+const DEMO_EARTHQUAKE = {
+  quakeId: '2016p858000',
+  magnitude: 7.8,
+  // Kaikoura earthquake: 2016-11-13T11:02:56Z
+  quakeTime: '2016-11-13T11:02:56.000Z',
+  location: 'Kaikōura, New Zealand',
+  description: 'The 2016 Kaikōura earthquake was a powerful M7.8 event that struck New Zealand\'s South Island. It\'s an excellent example for demonstrating aftershock forecasting.',
+};
+
 export default function Home() {
   // State for quake data
   const [quakeId, setQuakeId] = useState('2022p138188');
@@ -27,6 +38,9 @@ export default function Home() {
   const [startTime, setStartTime] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [loadedQuakeInfo, setLoadedQuakeInfo] = useState<{ magnitude: number; time: string } | null>(null);
+
+  // State for demo mode
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   // State for model parameters
   const [modelType, setModelType] = useState<ModelType>('nz');
@@ -65,6 +79,7 @@ export default function Home() {
     setResults(null);
     setValidationErrors([]);
     setLoadedQuakeInfo(null);
+    setIsDemoMode(false);
 
     try {
       const data = await fetchQuakeData(quakeId);
@@ -79,6 +94,33 @@ export default function Home() {
       setIsLoading(false);
     }
   }, [quakeId]);
+
+  // Demo mode: Pre-populate with the Kaikoura earthquake and auto-calculate
+  const handleTryDemo = useCallback(() => {
+    setResults(null);
+    setValidationErrors([]);
+    setIsDemoMode(true);
+
+    // Set demo earthquake data
+    setQuakeId(DEMO_EARTHQUAKE.quakeId);
+    setMagnitude(DEMO_EARTHQUAKE.magnitude.toString());
+    setQuakeTime(DEMO_EARTHQUAKE.quakeTime);
+
+    // Set start time to 1 hour after the earthquake (realistic scenario)
+    const quakeDate = new Date(DEMO_EARTHQUAKE.quakeTime);
+    const forecastStart = new Date(quakeDate.getTime() + 60 * 60 * 1000); // 1 hour later
+    setStartTime(forecastStart.toISOString());
+
+    // Set appropriate magnitude ranges for a M7.8 earthquake
+    const ranges = calculateInitialMagnitudeRanges(DEMO_EARTHQUAKE.magnitude);
+    setMagnitudeRanges(ranges);
+
+    // Set loaded quake info to show the info banner
+    setLoadedQuakeInfo({
+      magnitude: DEMO_EARTHQUAKE.magnitude,
+      time: DEMO_EARTHQUAKE.quakeTime,
+    });
+  }, []);
 
   const handleModelChange = useCallback((type: ModelType) => {
     setModelType(type);
@@ -228,6 +270,63 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-8 transition-colors">
       <main className="max-w-6xl mx-auto px-4">
+        {/* Demo Mode Banner - shown when demo is active */}
+        {isDemoMode && (
+          <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30
+                          border border-blue-200 dark:border-blue-800 rounded-lg print:hidden">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl" role="img" aria-label="Demo">🎯</span>
+              <div className="flex-1">
+                <h2 className="text-blue-800 dark:text-blue-300 font-semibold mb-1">
+                  Demo Mode: {DEMO_EARTHQUAKE.location}
+                </h2>
+                <p className="text-blue-700 dark:text-blue-400 text-sm mb-2">
+                  {DEMO_EARTHQUAKE.description}
+                </p>
+                <p className="text-blue-600 dark:text-blue-500 text-xs">
+                  Click <strong>Calculate Forecast</strong> below to see example results,
+                  or modify any parameters to explore different scenarios.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsDemoMode(false)}
+                className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-200"
+                aria-label="Dismiss demo banner"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Getting Started Card - shown when no data is loaded */}
+        {!magnitude && !isDemoMode && !loadedQuakeInfo && (
+          <div className="mb-6 p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700
+                          shadow-sm print:hidden">
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-3">
+              👋 Welcome to the Aftershock Calculator
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              This tool forecasts the probability of aftershocks following an earthquake using
+              the Omori-Utsu law. Get started by:
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={handleTryDemo}
+                className="px-4 py-2 bg-blue-600 text-white font-medium rounded-md
+                           hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2
+                           focus:ring-blue-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+              >
+                🎯 Try Demo
+              </button>
+              <span className="self-center text-gray-400 dark:text-gray-500">or</span>
+              <span className="self-center text-gray-600 dark:text-gray-400 text-sm">
+                Enter a GeoNet Quake ID below and click <strong>Load Quake Info</strong>
+              </span>
+            </div>
+          </div>
+        )}
+
         <QuakeInput
           quakeId={quakeId}
           onQuakeIdChange={setQuakeId}

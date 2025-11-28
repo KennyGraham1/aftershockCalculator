@@ -1,6 +1,66 @@
 'use client';
 
 import { useId, useCallback } from 'react';
+import InfoTooltip from './InfoTooltip';
+
+// Tooltip content for each parameter
+const TOOLTIPS = {
+  magnitude: (
+    <>
+      <strong>Mainshock Magnitude</strong>
+      <p className="mt-1">
+        The moment magnitude (Mw) of the mainshock earthquake. Larger magnitudes
+        result in more predicted aftershocks.
+      </p>
+    </>
+  ),
+  quakeTime: (
+    <>
+      <strong>Earthquake Origin Time</strong>
+      <p className="mt-1">
+        When the mainshock occurred. Aftershock rates decay over time following
+        the Omori-Utsu law, so accurate timing is important for forecasts.
+      </p>
+    </>
+  ),
+  startTime: (
+    <>
+      <strong>Forecast Start Time</strong>
+      <p className="mt-1">
+        When your forecast period begins. Set this to &quot;now&quot; to forecast
+        from the current moment, or set it to a past time to analyze historical
+        aftershock sequences.
+      </p>
+    </>
+  ),
+  durations: (
+    <>
+      <strong>Forecast Durations</strong>
+      <p className="mt-1">
+        Time windows (in days) for your aftershock forecasts. Common choices:
+      </p>
+      <ul className="mt-1 ml-3 text-xs list-disc">
+        <li><strong>1 day</strong> - Immediate hazard assessment</li>
+        <li><strong>7 days</strong> - Short-term planning</li>
+        <li><strong>30 days</strong> - Extended outlook</li>
+      </ul>
+    </>
+  ),
+  magnitudeRanges: (
+    <>
+      <strong>Magnitude Thresholds</strong>
+      <p className="mt-1">
+        Define the magnitude bins for your forecast. Results show probability
+        of at least one earthquake in each range:
+      </p>
+      <ul className="mt-1 ml-3 text-xs list-disc">
+        <li><strong>M1</strong> - Highest threshold (e.g., M5+ damaging quakes)</li>
+        <li><strong>M2</strong> - Middle threshold (e.g., M4+ felt quakes)</li>
+        <li><strong>M3</strong> - Lowest threshold (e.g., M3+ minor quakes)</li>
+      </ul>
+    </>
+  ),
+};
 
 interface ParametersProps {
   magnitude: string;
@@ -106,9 +166,10 @@ export default function Parameters({
         <div>
           <label
             htmlFor={`${baseId}-mag`}
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            className="flex items-center gap-1 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
           >
             Magnitude
+            <InfoTooltip content={TOOLTIPS.magnitude} />
           </label>
           <input
             id={`${baseId}-mag`}
@@ -128,9 +189,10 @@ export default function Parameters({
         <div>
           <label
             htmlFor={`${baseId}-quake-time`}
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            className="flex items-center gap-1 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
           >
             Quake Time
+            <InfoTooltip content={TOOLTIPS.quakeTime} />
           </label>
           <div className="flex gap-2">
             <input
@@ -162,9 +224,10 @@ export default function Parameters({
         <div>
           <label
             htmlFor={`${baseId}-start-time`}
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            className="flex items-center gap-1 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
           >
             Forecast Start Time
+            <InfoTooltip content={TOOLTIPS.startTime} />
           </label>
           <div className="flex gap-2">
             <input
@@ -192,8 +255,9 @@ export default function Parameters({
         </div>
         <div>
           <fieldset>
-            <legend className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <legend className="flex items-center gap-1 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Forecast lengths (days)
+              <InfoTooltip content={TOOLTIPS.durations} />
             </legend>
             <div className="flex gap-2">
               {durations.map((d, i) => (
@@ -224,8 +288,9 @@ export default function Parameters({
       </div>
 
       <fieldset>
-        <legend className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <legend className="flex items-center gap-1 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Magnitude Thresholds
+          <InfoTooltip content={TOOLTIPS.magnitudeRanges} />
         </legend>
         <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
           M1 should be highest, M3 should be lowest (e.g., M1=5, M2=4, M3=3)

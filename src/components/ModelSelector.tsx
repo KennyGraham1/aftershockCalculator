@@ -3,6 +3,7 @@
 import { useId, useState, useCallback, useEffect } from 'react';
 import type { ModelType, ModelParameters } from '@/types';
 import { MODEL_PRESETS, MODEL_INFO } from '@/types';
+import InfoTooltip from './InfoTooltip';
 
 interface ModelSelectorProps {
   modelType: ModelType;
@@ -20,12 +21,76 @@ const MODEL_OPTIONS: { type: ModelType; label: string; description: string }[] =
   description: info.description,
 }));
 
-const PARAM_INFO: Record<keyof ModelParameters, { label: string; description: string }> = {
-  a: { label: 'a', description: 'Productivity parameter' },
-  b: { label: 'b', description: 'Magnitude scaling parameter' },
-  c: { label: 'c', description: 'Omori c-value (time offset)' },
-  p: { label: 'p', description: 'Omori p-value (decay rate)' },
+const PARAM_INFO: Record<keyof ModelParameters, { label: string; description: string; tooltip: React.ReactNode }> = {
+  a: {
+    label: 'a',
+    description: 'Productivity parameter',
+    tooltip: (
+      <>
+        <strong>Productivity (a)</strong>
+        <p className="mt-1">
+          Controls how many aftershocks occur. More negative values mean fewer aftershocks.
+          Typical range: -4 to 0.
+        </p>
+      </>
+    ),
+  },
+  b: {
+    label: 'b',
+    description: 'Magnitude scaling',
+    tooltip: (
+      <>
+        <strong>Gutenberg-Richter b-value</strong>
+        <p className="mt-1">
+          Controls the ratio of small to large earthquakes. A b-value of 1.0 means there are
+          ~10 times more M3 than M4 earthquakes. Typical range: 0.5 to 1.5.
+        </p>
+      </>
+    ),
+  },
+  c: {
+    label: 'c',
+    description: 'Omori c-value',
+    tooltip: (
+      <>
+        <strong>Omori c-value (days)</strong>
+        <p className="mt-1">
+          A small time offset that prevents the rate from going to infinity at t=0.
+          Smaller values mean higher initial rates. Typical range: 0.001 to 1.0 days.
+        </p>
+      </>
+    ),
+  },
+  p: {
+    label: 'p',
+    description: 'Omori p-value',
+    tooltip: (
+      <>
+        <strong>Omori p-value (decay exponent)</strong>
+        <p className="mt-1">
+          Controls how fast aftershock rates decay. p=1 is standard Omori decay.
+          p&gt;1 means faster decay; p&lt;1 means slower decay. Typical range: 0.5 to 2.0.
+        </p>
+      </>
+    ),
+  },
 };
+
+const SEISMIC_MODEL_TOOLTIP = (
+  <>
+    <strong>Seismic Model Selection</strong>
+    <p className="mt-1">
+      Different tectonic regions have different aftershock characteristics.
+      Choose the model that best matches your earthquake&apos;s location:
+    </p>
+    <ul className="mt-1 ml-3 text-xs list-disc">
+      <li><strong>NZ Generic</strong> - New Zealand crustal earthquakes</li>
+      <li><strong>Subduction Zone</strong> - Hikurangi/plate interface events</li>
+      <li><strong>California (ACR)</strong> - Classic USGS parameters</li>
+      <li><strong>Stable Continental</strong> - Low-seismicity regions</li>
+    </ul>
+  </>
+);
 
 const STORAGE_KEY = 'aftershock-model-expanded';
 
@@ -106,27 +171,30 @@ export default function ModelSelector({
 
   return (
     <div className="mb-6 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 print:hidden">
-      {/* Disclosure Button Header */}
-      <button
-        type="button"
-        onClick={toggleExpanded}
-        aria-expanded={isExpanded}
-        aria-controls={`${baseId}-content`}
-        className="w-full px-4 py-3 flex items-center justify-between text-left
-                   rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700
-                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset
-                   transition-colors"
-      >
+      {/* Disclosure Header - Split into label area and expand button */}
+      <div className="px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             Seismic Model
           </span>
+          <InfoTooltip content={SEISMIC_MODEL_TOOLTIP} />
           <span className="text-sm px-2 py-0.5 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full">
             {currentModelLabel}
           </span>
         </div>
-        <ChevronIcon expanded={isExpanded} />
-      </button>
+        <button
+          type="button"
+          onClick={toggleExpanded}
+          aria-expanded={isExpanded}
+          aria-controls={`${baseId}-content`}
+          className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700
+                     focus:outline-none focus:ring-2 focus:ring-blue-500
+                     transition-colors"
+          aria-label={isExpanded ? 'Collapse model options' : 'Expand model options'}
+        >
+          <ChevronIcon expanded={isExpanded} />
+        </button>
+      </div>
 
       {/* Collapsible Content */}
       <div
@@ -187,9 +255,10 @@ export default function ModelSelector({
                 <div key={param}>
                   <label
                     htmlFor={`${baseId}-${param}`}
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    className="flex items-center gap-1 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                   >
                     {PARAM_INFO[param].label}
+                    <InfoTooltip content={PARAM_INFO[param].tooltip} />
                   </label>
                   <input
                     id={`${baseId}-${param}`}

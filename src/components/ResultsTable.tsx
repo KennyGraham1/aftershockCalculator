@@ -2,6 +2,7 @@
 
 import React from 'react';
 import type { CalculationResults } from '@/types';
+import InfoTooltip from './InfoTooltip';
 
 interface ResultsTableProps {
   results: CalculationResults | null;
@@ -10,6 +11,37 @@ interface ResultsTableProps {
 }
 
 const COLUMN_HEADERS = ['Average number', 'Range *', 'Probability of 1 or more'] as const;
+
+// Tooltips for understanding the results
+const RESULTS_TOOLTIPS = {
+  averageNumber: (
+    <>
+      <strong>Average Number</strong>
+      <p className="mt-1">
+        The expected (mean) number of aftershocks in this magnitude range
+        and time period. Based on the Omori-Utsu model.
+      </p>
+    </>
+  ),
+  range: (
+    <>
+      <strong>95% Confidence Range</strong>
+      <p className="mt-1">
+        The range where we expect the actual count to fall 95% of the time,
+        based on Poisson statistics. If avg=5, range might be 2-10.
+      </p>
+    </>
+  ),
+  probability: (
+    <>
+      <strong>Probability of ≥1 Event</strong>
+      <p className="mt-1">
+        The chance that at least one aftershock of this magnitude will occur
+        in this time period. Values near 100% indicate high likelihood.
+      </p>
+    </>
+  ),
+};
 
 function formatPrintDate(): string {
   return new Date().toLocaleString('en-NZ', {
@@ -84,7 +116,23 @@ export default function ResultsTable({ results, onExportCSV, modelName = 'NZ Gen
                       scope="col"
                       className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center text-sm dark:text-gray-200"
                     >
-                      {header}
+                      <span className="flex items-center justify-center gap-1">
+                        {header}
+                        {/* Only show tooltips on the first group to avoid cluttering */}
+                        {groupIndex === 0 && (
+                          <span className="print:hidden">
+                            <InfoTooltip
+                              content={
+                                headerIndex === 0
+                                  ? RESULTS_TOOLTIPS.averageNumber
+                                  : headerIndex === 1
+                                  ? RESULTS_TOOLTIPS.range
+                                  : RESULTS_TOOLTIPS.probability
+                              }
+                            />
+                          </span>
+                        )}
+                      </span>
                     </th>
                   ))}
                 </React.Fragment>
