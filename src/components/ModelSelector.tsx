@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState, useEffect, useCallback } from 'react';
+import { useId, useState, useCallback, useEffect } from 'react';
 import type { ModelType, ModelParameters } from '@/types';
 import { MODEL_PRESETS, MODEL_INFO } from '@/types';
 
@@ -29,6 +29,21 @@ const PARAM_INFO: Record<keyof ModelParameters, { label: string; description: st
 
 const STORAGE_KEY = 'aftershock-model-expanded';
 
+/**
+ * Read initial expanded state from localStorage (client-side only)
+ */
+function getInitialExpandedState(): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored === 'true';
+  } catch {
+    return false;
+  }
+}
+
 /** Chevron icon component for expand/collapse indicator */
 function ChevronIcon({ expanded }: { expanded: boolean }) {
   return (
@@ -53,20 +68,15 @@ export default function ModelSelector({
   const baseId = useId();
   const isCustom = modelType === 'custom';
 
-  // Initialize collapsed state (default: collapsed)
+  // Initialize collapsed state from localStorage (lazy initializer avoids hydration issues)
   const [isExpanded, setIsExpanded] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
 
-  // Load persisted state from localStorage on mount
+  // Hydrate client-side state after mount
+  // This is a legitimate use of setState in useEffect for client-side hydration
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored !== null) {
-        setIsExpanded(stored === 'true');
-      }
-    } catch {
-      // localStorage may not be available (SSR, private browsing, etc.)
-    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsExpanded(getInitialExpandedState());
     setIsHydrated(true);
   }, []);
 
