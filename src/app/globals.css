@@ -1,0 +1,142 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ===== PRINT STYLES ===== */
+@media print {
+  /* Force landscape orientation */
+  @page {
+    size: landscape;
+    margin: 1.5cm 2cm;
+  }
+
+  /* Reset background and colors for print */
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 11pt;
+    line-height: 1.4;
+  }
+
+  /* Hide all non-essential elements */
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Show print-only elements */
+  .print\:block {
+    display: block !important;
+  }
+
+  /* Print header styling */
+  .print-header {
+    display: block !important;
+    margin-bottom: 20pt;
+    padding-bottom: 10pt;
+    border-bottom: 2pt solid #333;
+  }
+
+  .print-header h1 {
+    font-size: 18pt;
+    font-weight: bold;
+    color: #8D0020;
+    margin: 0 0 6pt 0;
+  }
+
+  .print-header .metadata {
+    font-size: 10pt;
+    color: #444;
+  }
+
+  .print-header .metadata span {
+    margin-right: 20pt;
+  }
+
+  /* Results table styling for print */
+  .print-results-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10pt;
+    page-break-inside: avoid;
+  }
+
+  .print-results-table th,
+  .print-results-table td {
+    border: 1pt solid #333;
+    padding: 8pt 10pt;
+    text-align: center;
+  }
+
+  .print-results-table th {
+    background-color: #f0f0f0 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    font-weight: bold;
+    font-size: 9pt;
+  }
+
+  .print-results-table thead th {
+    background-color: #8D0020 !important;
+    color: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-results-table tbody tr:nth-child(even) {
+    background-color: #f9f9f9 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-results-table .duration-cell {
+    font-weight: bold;
+    background-color: #e8e8e8 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Print footer */
+  .print-footer {
+    display: block !important;
+    margin-top: 20pt;
+    padding-top: 10pt;
+    border-top: 1pt solid #999;
+    font-size: 8pt;
+    color: #666;
+    text-align: center;
+  }
+
+  /* Ensure links don't show URLs */
+  a[href]::after {
+    content: none !important;
+  }
+
+  /* Remove shadows and rounded corners */
+  * {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+}
