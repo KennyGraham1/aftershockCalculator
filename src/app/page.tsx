@@ -5,10 +5,13 @@ import QuakeInput from '@/components/QuakeInput';
 import Parameters from '@/components/Parameters';
 import ModelSelector from '@/components/ModelSelector';
 import ResultsTable from '@/components/ResultsTable';
+import VisualizationTab from '@/components/VisualizationTab';
 import { fetchQuakeData, calculateInitialMagnitudeRanges } from '@/lib/api';
 import { calculateDurationForecast, validateModelParameters } from '@/lib/calculations';
 import type { ModelType, ModelParameters, CalculationResults } from '@/types';
 import { MODEL_PRESETS, MODEL_INFO } from '@/types';
+
+type ResultsViewTab = 'table' | 'visualization';
 
 interface ParameterWarning {
   message: string;
@@ -53,6 +56,9 @@ export default function Home() {
   // State for results and errors
   const [results, setResults] = useState<CalculationResults | null>(null);
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
+
+  // State for results view tab
+  const [activeResultsTab, setActiveResultsTab] = useState<ResultsViewTab>('table');
 
   // Initialize start time to current time on mount (client-side only)
   useEffect(() => {
@@ -408,11 +414,52 @@ export default function Home() {
           </p>
         )}
 
-        <ResultsTable
-          results={results}
-          onExportCSV={handleExportCSV}
-          modelName={MODEL_INFO[modelType].name}
-        />
+        {/* Results Section with Tabs */}
+        {results && (
+          <div className="mt-6">
+            {/* Tab Navigation */}
+            <div className="border-b border-gray-200 dark:border-gray-700 print:hidden">
+              <nav className="-mb-px flex space-x-8" aria-label="Results view tabs">
+                <button
+                  onClick={() => setActiveResultsTab('table')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    activeResultsTab === 'table'
+                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                  }`}
+                  aria-current={activeResultsTab === 'table' ? 'page' : undefined}
+                >
+                  📊 Table View
+                </button>
+                <button
+                  onClick={() => setActiveResultsTab('visualization')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    activeResultsTab === 'visualization'
+                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                  }`}
+                  aria-current={activeResultsTab === 'visualization' ? 'page' : undefined}
+                >
+                  📈 Visualization
+                </button>
+              </nav>
+            </div>
+
+            {/* Tab Content */}
+            {activeResultsTab === 'table' ? (
+              <ResultsTable
+                results={results}
+                onExportCSV={handleExportCSV}
+                modelName={MODEL_INFO[modelType].name}
+              />
+            ) : (
+              <VisualizationTab
+                results={results}
+                modelName={MODEL_INFO[modelType].name}
+              />
+            )}
+          </div>
+        )}
       </main>
     </div>
   );

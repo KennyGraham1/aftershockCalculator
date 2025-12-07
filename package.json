@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@highcharts/react": "^4.1.0",
+    "highcharts": "^12.4.0",
     "next": "^14.2.33",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
