@@ -90,7 +90,7 @@ export default function ResultsTable({
         <h1>Aftershock Forecast Report</h1>
         <div className="metadata">
           <span><strong>Event ID:</strong> {results.quakeId}</span>
-          <span><strong>Forecast start:</strong> {startTime ? formatDateTime(startTime) : '—'}</span>
+          <span><strong>Forecast start:</strong> {startTime ? formatDateTime(startTime) : 'not set'}</span>
           <span><strong>Model:</strong> {modelName}</span>
         </div>
       </div>
@@ -230,10 +230,10 @@ export default function ResultsTable({
         {modelParams && (
           <p>
             Model parameters ({modelName}):{' '}
-            a&nbsp;=&nbsp;{modelParams.a},&ensp;
-            b&nbsp;=&nbsp;{modelParams.b},&ensp;
-            c&nbsp;=&nbsp;{modelParams.c}&nbsp;days,&ensp;
-            p&nbsp;=&nbsp;{modelParams.p}
+            <em>a</em>&nbsp;=&nbsp;{modelParams.a},&ensp;
+            <em>b</em>&nbsp;=&nbsp;{modelParams.b},&ensp;
+            <em>c</em>&nbsp;=&nbsp;{modelParams.c}&nbsp;days,&ensp;
+            <em>p</em>&nbsp;=&nbsp;{modelParams.p}
           </p>
         )}
       </div>

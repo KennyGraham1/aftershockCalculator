@@ -51,9 +51,9 @@ const TOOLTIPS = {
         start time. Standard reporting intervals:
       </p>
       <ul className="mt-1 ml-3 text-xs list-disc">
-        <li><strong>1 day</strong> &mdash; immediate response and emergency operations</li>
-        <li><strong>7 days</strong> &mdash; short-term operational planning</li>
-        <li><strong>30 days</strong> &mdash; extended situational outlook</li>
+        <li><strong>1 day:</strong> immediate response and emergency operations</li>
+        <li><strong>7 days:</strong> short-term operational planning</li>
+        <li><strong>30 days:</strong> extended situational outlook</li>
       </ul>
     </>
   ),
@@ -66,9 +66,9 @@ const TOOLTIPS = {
         one or more occurrences:
       </p>
       <ul className="mt-1 ml-3 text-xs list-disc">
-        <li><strong>M1</strong> &mdash; highest threshold (e.g., M5+, potentially damaging events)</li>
-        <li><strong>M2</strong> &mdash; intermediate threshold (e.g., M4+, widely felt events)</li>
-        <li><strong>M3</strong> &mdash; lowest threshold (e.g., M3+, locally felt events)</li>
+        <li><strong>M1:</strong> highest threshold (e.g., M5+, potentially damaging events)</li>
+        <li><strong>M2:</strong> intermediate threshold (e.g., M4+, widely felt events)</li>
+        <li><strong>M3:</strong> lowest threshold (e.g., M3+, locally felt events)</li>
       </ul>
     </>
   ),

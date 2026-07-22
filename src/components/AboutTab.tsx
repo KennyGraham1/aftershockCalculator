@@ -84,28 +84,28 @@ export default function AboutTab() {
       <Section title="The Four Model Parameters">
         <ul className="list-disc list-inside space-y-2">
           <li>
-            <strong>a — productivity.</strong> Sets the overall aftershock rate of the sequence; more negative values
+            <strong><em>a</em> (productivity).</strong> Sets the overall aftershock rate of the sequence; more negative values
             mean fewer aftershocks. Regional calibrations span roughly {PARAMETER_BOUNDS.a.min} to {PARAMETER_BOUNDS.a.max};
             Page et al. (2016) found regional variation of nearly a factor of ten.
           </li>
           <li>
-            <strong>b — Gutenberg–Richter b-value.</strong> The relative frequency of small versus large events;
-            b&nbsp;=&nbsp;1 means each unit decrease in magnitude brings ~10× more events. Typical range{' '}
+            <strong><em>b</em> (Gutenberg–Richter b-value).</strong> The relative frequency of small versus large events;
+            <em> b</em>&nbsp;=&nbsp;1 means each unit decrease in magnitude brings ~10× more events. Typical range{' '}
             {PARAMETER_BOUNDS.b.min}–{PARAMETER_BOUNDS.b.max}.
           </li>
           <li>
-            <strong>c — Omori c-value (days).</strong> A short time constant that keeps the rate finite immediately
+            <strong><em>c</em> (Omori c-value, in days).</strong> A short time constant that keeps the rate finite immediately
             after the mainshock; partly physical, partly an artefact of early-sequence catalogue incompleteness.
             Typical range {PARAMETER_BOUNDS.c.min}–{PARAMETER_BOUNDS.c.max} days.
           </li>
           <li>
-            <strong>p — Omori decay exponent.</strong> How fast rates decay: p&nbsp;=&nbsp;1 is classical Omori decay,
+            <strong><em>p</em> (Omori decay exponent).</strong> How fast rates decay: <em>p</em>&nbsp;=&nbsp;1 is classical Omori decay,
             larger is faster. Typical range {PARAMETER_BOUNDS.p.min}–{PARAMETER_BOUNDS.p.max}.
           </li>
         </ul>
         <p>
           Values outside the literature ranges trigger a non-blocking warning; values that make the mathematics
-          undefined (b, c or p ≤ 0) block calculation.
+          undefined (<em>b</em>, <em>c</em> or <em>p</em> ≤ 0) block calculation.
         </p>
       </Section>
 
@@ -115,10 +115,11 @@ export default function AboutTab() {
             <thead>
               <tr className="bg-gray-50 dark:bg-gray-900 text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
                 <th scope="col" className="px-3 py-2 text-left">Model</th>
-                <th scope="col" className="px-3 py-2 text-center">a</th>
-                <th scope="col" className="px-3 py-2 text-center">b</th>
-                <th scope="col" className="px-3 py-2 text-center">c (days)</th>
-                <th scope="col" className="px-3 py-2 text-center">p</th>
+                {/* Parameter symbols keep their lowercase, italic form */}
+                <th scope="col" className="px-3 py-2 text-center normal-case"><em>a</em></th>
+                <th scope="col" className="px-3 py-2 text-center normal-case"><em>b</em></th>
+                <th scope="col" className="px-3 py-2 text-center normal-case"><em>c</em> (days)</th>
+                <th scope="col" className="px-3 py-2 text-center normal-case"><em>p</em></th>
                 <th scope="col" className="px-3 py-2 text-left">Basis</th>
               </tr>
             </thead>
@@ -138,7 +139,7 @@ export default function AboutTab() {
         </div>
         <p>
           The generic parameter sets are calibrated on many past sequences; an individual sequence can differ
-          substantially. Operational agencies re-fit parameters to each sequence as data accumulate — forecasts from
+          substantially. Operational agencies re-fit parameters to each sequence as data accumulate; forecasts from
           generic presets are indicative, and official forecasts (GeoNet, USGS) take precedence.
         </p>
       </Section>
@@ -161,7 +162,7 @@ export default function AboutTab() {
             forecast window and magnitude thresholds; the mainshock itself is always excluded.
           </li>
           <li>
-            <strong>N-test</strong> (Zechar 2010): the two-sided Poisson consistency test at the 5% level — is the
+            <strong>N-test</strong> (Zechar 2010): the two-sided Poisson consistency test at the 5% level: is the
             observed count plausible given the forecast expectation? Verdicts: consistent, over-prediction, or
             under-prediction.
           </li>
@@ -170,11 +171,12 @@ export default function AboutTab() {
             95% range.
           </li>
           <li>
-            <strong>Brier score.</strong> For the binary &ldquo;one or more events&rdquo; forecast with stated
+            <strong>Brier score.</strong>{' '}
+            For the binary &ldquo;one or more events&rdquo; forecast with stated
             probability <Equation inline tex="p" /> and outcome <Equation inline tex="o" /> (1 if an event
             occurred, 0 if not): <Equation inline tex="\mathrm{BS} = (p - o)^2" />. It ranges from 0 (a certain forecast that proved
             correct) to 1 (a certain forecast that proved wrong). A useful benchmark is the uninformative 50%
-            forecast, which always scores 0.25 — a forecast system that averages below 0.25 is conveying real
+            forecast, which always scores 0.25; a forecast system that averages below 0.25 is conveying real
             information about occurrence. The Brier score is a <em>proper</em> score: reporting your honest
             probability is always the best strategy, so it rewards both calibration (probabilities that match
             observed frequencies) and sharpness (probabilities close to 0 or 1).
@@ -185,13 +187,13 @@ export default function AboutTab() {
             A perfect certain forecast scores 0; the uninformative
             50% forecast scores <Equation inline tex="\ln 2 \approx 0.693" />; and the score grows without bound as a confident forecast proves
             wrong (probabilities are clamped at 10⁻⁶ here, capping the penalty near 13.8). It is <em>strictly</em>
-            proper and penalises overconfidence far more harshly than the Brier score — forecasting 99% for
+            proper and penalises overconfidence far more harshly than the Brier score: forecasting 99% for
             something that doesn&rsquo;t happen costs 4.6, versus 0.98 under Brier. Differences in average log
             score between two models are the <em>information gain</em> of one over the other (in nats), which is
             why it is the standard skill measure in CSEP-style forecast experiments.
           </li>
           <li>
-            <strong>Poisson log-likelihood</strong> of the observed count under the forecast expectation — the
+            <strong>Poisson log-likelihood</strong> of the observed count under the forecast expectation: the
             count-based analogue of the log score, used to compare how well different models explain the same
             observations.
           </li>
@@ -208,7 +210,7 @@ export default function AboutTab() {
         <p>
           Caveats: counts are assumed Poisson and parameter uncertainty is not propagated (intervals are narrower than
           reality); GeoNet magnitudes mix magnitude types; catalogues are incomplete for small events in the hours
-          after a large mainshock. A single evaluation is weak evidence — consistency across many forecasts is what
+          after a large mainshock. A single evaluation is weak evidence; consistency across many forecasts is what
           validates a model.
         </p>
       </Section>
@@ -220,7 +222,7 @@ export default function AboutTab() {
           <li>Page, M.T., van der Elst, N., Hardebeck, J., Felzer, K. &amp; Michael, A.J. (2016). Three ingredients for improved global aftershock forecasts. <em>BSSA</em> 106(5).</li>
           <li>Wells, D.L. &amp; Coppersmith, K.J. (1994). New empirical relationships among magnitude, rupture length, rupture width, rupture area, and surface displacement. <em>BSSA</em> 84(4), 974–1002.</li>
           <li>Zechar, J.D. (2010). Evaluating earthquake predictions and earthquake forecasts: a guide for students and new researchers. <em>CORSSA</em>.</li>
-          <li>GeoNet — Earth Sciences New Zealand: quake API and QuakeSearch catalogue (api.geonet.org.nz, quakesearch.geonet.org.nz).</li>
+          <li>GeoNet (Earth Sciences New Zealand): quake API and QuakeSearch catalogue (api.geonet.org.nz, quakesearch.geonet.org.nz).</li>
         </ul>
       </Section>
     </div>

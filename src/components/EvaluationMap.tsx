@@ -132,7 +132,7 @@ export default function EvaluationMap({ region, events, mainshock, thresholds }:
       if (!bin) continue;
       const distanceKm = haversineKm(mainshock.latitude, mainshock.longitude, e.latitude, e.longitude);
       const detailHtml =
-        `<b>M${e.magnitude.toFixed(1)}</b>${inside ? '' : ' <i>(outside region — excluded)</i>'}<br/>` +
+        `<b>M${e.magnitude.toFixed(1)}</b>${inside ? '' : ' <i>(outside region, excluded)</i>'}<br/>` +
         `${formatUtc(e.timeMs)}<br/>` +
         `${distanceKm.toFixed(0)} km from epicentre` +
         `${e.depthKm !== null ? ` · depth ${e.depthKm.toFixed(0)} km` : ''}<br/>` +

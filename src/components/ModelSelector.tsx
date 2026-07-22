@@ -27,7 +27,7 @@ const PARAM_INFO: Record<keyof ModelParameters, { label: string; description: st
     description: 'Productivity parameter',
     tooltip: (
       <>
-        <strong>Productivity Parameter (a)</strong>
+        <strong>Productivity Parameter (<em>a</em>)</strong>
         <p className="mt-1">
           Sets the overall rate of aftershock occurrence for a sequence. More
           negative values correspond to lower aftershock productivity. Published
@@ -41,7 +41,7 @@ const PARAM_INFO: Record<keyof ModelParameters, { label: string; description: st
     description: 'Magnitude scaling',
     tooltip: (
       <>
-        <strong>Gutenberg&ndash;Richter b-value</strong>
+        <strong>Gutenberg&ndash;Richter <em>b</em>-value</strong>
         <p className="mt-1">
           Governs the relative frequency of small versus large events. A value
           of 1.0 implies a tenfold increase in event frequency for each unit
@@ -56,7 +56,7 @@ const PARAM_INFO: Record<keyof ModelParameters, { label: string; description: st
     description: 'Omori c-value',
     tooltip: (
       <>
-        <strong>Omori c-value (days)</strong>
+        <strong>Omori <em>c</em>-value (days)</strong>
         <p className="mt-1">
           A short time constant that regularises the aftershock rate in the
           period immediately following the mainshock. Smaller values imply
@@ -71,7 +71,7 @@ const PARAM_INFO: Record<keyof ModelParameters, { label: string; description: st
     description: 'Omori p-value',
     tooltip: (
       <>
-        <strong>Omori p-value (decay exponent)</strong>
+        <strong>Omori <em>p</em>-value (decay exponent)</strong>
         <p className="mt-1">
           The exponent governing the temporal decay of aftershock rates.
           A value of 1 corresponds to classical Omori decay; values above 1
@@ -92,10 +92,10 @@ const SEISMIC_MODEL_TOOLTIP = (
       of the mainshock:
     </p>
     <ul className="mt-1 ml-3 text-xs list-disc">
-      <li><strong>NZ Generic</strong> &mdash; New Zealand crustal earthquakes (ESNZ calibration)</li>
-      <li><strong>Subduction Zone</strong> &mdash; Hikurangi/Puysegur plate-interface events</li>
-      <li><strong>California (ACR)</strong> &mdash; Reasenberg &amp; Jones (1989) generic parameters</li>
-      <li><strong>Stable Continental</strong> &mdash; low-seismicity intraplate regions</li>
+      <li><strong>NZ Generic:</strong> New Zealand crustal earthquakes (ESNZ calibration)</li>
+      <li><strong>Subduction Zone:</strong> Hikurangi/Puysegur plate-interface events</li>
+      <li><strong>California (ACR):</strong> Reasenberg &amp; Jones (1989) generic parameters</li>
+      <li><strong>Stable Continental:</strong> low-seismicity intraplate regions</li>
     </ul>
   </>
 );

@@ -174,7 +174,7 @@ export default function EvaluationTab({ results, modelName = 'NZ Generic' }: Eva
     const nowMs = Date.now();
 
     if (windowStartMs >= nowMs) {
-      setEvalError('The forecast window is entirely in the future — there are no observations to evaluate yet.');
+      setEvalError('The forecast window is entirely in the future; there are no observations to evaluate yet.');
       return;
     }
 
@@ -249,13 +249,13 @@ export default function EvaluationTab({ results, modelName = 'NZ Generic' }: Eva
     if (!results || !magVals) return [];
     const list: string[] = [];
     if (catalog && catalog.length >= CATALOG_TRUNCATION_WARNING_COUNT) {
-      list.push(`The catalogue returned ${catalog.length} events, which may indicate the query hit a server limit — counts could be incomplete. Consider a higher magnitude threshold or shorter windows.`);
+      list.push(`The catalogue returned ${catalog.length} events, which may indicate the query hit a server limit, so counts could be incomplete. Consider a higher magnitude threshold or shorter windows.`);
     }
     if (magVals.m3 < 3) {
       list.push(`The lowest threshold (M${magVals.m3}) is near or below the typical GeoNet completeness magnitude; observed counts may under-report small events, especially in the hours after a large mainshock (short-term incompleteness).`);
     }
     if (evaluation?.rows.some(r => r.status === 'partial')) {
-      list.push('Some windows are still in progress — they are evaluated over the elapsed portion only, with the expected count scaled accordingly.');
+      list.push('Some windows are still in progress; they are evaluated over the elapsed portion only, with the expected count scaled accordingly.');
     }
     list.push('GeoNet magnitudes are a mix of magnitude types (mostly local magnitude), whereas the forecast assumes a consistent scale; small systematic differences are possible.');
     return list;
@@ -269,7 +269,7 @@ export default function EvaluationTab({ results, modelName = 'NZ Generic' }: Eva
     return {
       backgroundColor: 'transparent',
       title: {
-        text: `Observed vs Expected — ${bins[selectedBin].label}`,
+        text: `Observed vs Expected: ${bins[selectedBin].label}`,
         subtext: 'Tooltip shows the 95% Poisson range for each window',
         textStyle: { fontSize: 15, fontWeight: 'bold', color: AXIS_LABEL_COLOR },
         subtextStyle: { color: AXIS_LABEL_COLOR },
@@ -341,7 +341,7 @@ export default function EvaluationTab({ results, modelName = 'NZ Generic' }: Eva
     return {
       backgroundColor: 'transparent',
       title: {
-        text: `Cumulative Events Over Time — ${bin.label}`,
+        text: `Cumulative Events Over Time: ${bin.label}`,
         subtext: 'Observed events (step) against the model expectation N(t)',
         textStyle: { fontSize: 15, fontWeight: 'bold', color: AXIS_LABEL_COLOR },
         subtextStyle: { color: AXIS_LABEL_COLOR },
@@ -454,7 +454,7 @@ export default function EvaluationTab({ results, modelName = 'NZ Generic' }: Eva
           </div>
           <div>
             <label htmlFor="eval-multiplier" className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
-              Radius = k × rupture length
+              Radius = <em>k</em> × rupture length
             </label>
             <select
               id="eval-multiplier"
@@ -529,7 +529,7 @@ export default function EvaluationTab({ results, modelName = 'NZ Generic' }: Eva
               <h1>Aftershock Forecast Evaluation Report</h1>
               <div className="metadata">
                 <span><strong>Event ID:</strong> {results.quakeId} (M{results.mainshockMagnitude.toFixed(1)})</span>
-                <span><strong>Model:</strong> {modelName} — a={results.modelParams.a}, b={results.modelParams.b}, c={results.modelParams.c}, p={results.modelParams.p}</span>
+                <span><strong>Model:</strong> {modelName}: <em>a</em>={results.modelParams.a}, <em>b</em>={results.modelParams.b}, <em>c</em>={results.modelParams.c}, <em>p</em>={results.modelParams.p}</span>
                 <span>
                   <strong>Region:</strong> {evaluatedRegion.type === 'circle' ? 'circle' : 'equal-area square'},
                   radius {evaluatedRegion.radiusKm.toFixed(1)} km,
@@ -643,7 +643,7 @@ export default function EvaluationTab({ results, modelName = 'NZ Generic' }: Eva
                 onClick={() => window.print()}
                 className="px-4 py-2 bg-gray-500 text-white text-sm rounded-md hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
                 aria-label="Export the evaluation report as PDF via the print dialog"
-                title="Opens the print dialog — choose 'Save as PDF' as the destination"
+                title="Opens the print dialog; choose 'Save as PDF' as the destination"
               >
                 🖨️ Export PDF report
               </button>
@@ -666,7 +666,7 @@ export default function EvaluationTab({ results, modelName = 'NZ Generic' }: Eva
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
                 {evaluatedRegion.type === 'circle' ? 'Circular' : 'Equal-area square'} region, radius{' '}
                 {evaluatedRegion.radiusKm.toFixed(1)} km, area{' '}
-                {Math.round(regionAreaKm2(evaluatedRegion)).toLocaleString('en-NZ')} km² — grey events fall inside
+                {Math.round(regionAreaKm2(evaluatedRegion)).toLocaleString('en-NZ')} km². Grey events fall inside
                 the catalogue search box but outside the region, and are excluded from all counts.
               </p>
               <EvaluationMap

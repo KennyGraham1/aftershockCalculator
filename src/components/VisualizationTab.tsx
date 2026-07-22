@@ -429,7 +429,7 @@ export default function VisualizationTab({ results, modelName = 'NZ Generic' }: 
     title: {
       ...CHART_TITLE_STYLE,
       text: `Likely Number of ${selectedOafData.label} Aftershocks`,
-      subtext: `Within ${effectiveDuration} ${effectiveDuration === 1 ? 'day' : 'days'} — the bars sum to the reported ${selectedProb < 1 ? '<1' : selectedProb > 99 ? '>99' : Math.round(selectedProb)}% probability of one or more events`,
+      subtext: `Within ${effectiveDuration} ${effectiveDuration === 1 ? 'day' : 'days'}; the bars sum to the reported ${selectedProb < 1 ? '<1' : selectedProb > 99 ? '>99' : Math.round(selectedProb)}% probability of one or more events`,
     },
     grid: { top: 85, bottom: 55, left: 65, right: 25 },
     xAxis: categoryAxis(poissonData.map(d => d.name), 'Number of Aftershocks'),
@@ -467,7 +467,7 @@ export default function VisualizationTab({ results, modelName = 'NZ Generic' }: 
     title: {
       ...CHART_TITLE_STYLE,
       text: 'Probability of One or More Aftershocks',
-      subtext: `Per magnitude bin and forecast window — model: ${modelName}`,
+      subtext: `Per magnitude bin and forecast window (model: ${modelName})`,
     },
     grid: { top: 80, bottom: 80, left: 65, right: 25 },
     legend: { bottom: 0, textStyle: { color: AXIS_LABEL_COLOR } },
@@ -500,7 +500,7 @@ export default function VisualizationTab({ results, modelName = 'NZ Generic' }: 
     title: {
       ...CHART_TITLE_STYLE,
       text: 'Expected Number of Aftershocks',
-      subtext: `Per magnitude bin and forecast window — model: ${modelName}`,
+      subtext: `Per magnitude bin and forecast window (model: ${modelName})`,
     },
     grid: { top: 80, bottom: 80, left: 65, right: 25 },
     legend: { bottom: 0, textStyle: { color: AXIS_LABEL_COLOR } },
@@ -532,7 +532,7 @@ export default function VisualizationTab({ results, modelName = 'NZ Generic' }: 
     title: {
       ...CHART_TITLE_STYLE,
       text: 'Probability Growth with Forecast Duration',
-      subtext: 'P(≥1 event) saturates as the window lengthens — computed continuously from the model',
+      subtext: 'P(≥1 event) saturates as the window lengthens, computed continuously from the model',
     },
     grid: { top: 80, bottom: 80, left: 65, right: 25 },
     legend: { bottom: 0, textStyle: { color: AXIS_LABEL_COLOR } },
@@ -561,7 +561,7 @@ export default function VisualizationTab({ results, modelName = 'NZ Generic' }: 
     title: {
       ...CHART_TITLE_STYLE,
       text: 'Aftershock Rate Decay (Omori–Utsu Law)',
-      subtext: 'Daily rate vs time since mainshock, log–log — the shaded band is the forecast window',
+      subtext: 'Daily rate vs time since mainshock, log–log; the shaded band is the forecast window',
     },
     grid: { top: 80, bottom: 80, left: 70, right: 30 },
     legend: { bottom: 0, textStyle: { color: AXIS_LABEL_COLOR } },
@@ -622,7 +622,7 @@ export default function VisualizationTab({ results, modelName = 'NZ Generic' }: 
     title: {
       ...CHART_TITLE_STYLE,
       text: 'Cumulative Expected Aftershocks',
-      subtext: 'Stacked by magnitude bin — growth slows as the sequence decays',
+      subtext: 'Stacked by magnitude bin; growth slows as the sequence decays',
     },
     grid: { top: 80, bottom: 80, left: 65, right: 25 },
     legend: { bottom: 0, textStyle: { color: AXIS_LABEL_COLOR } },
@@ -653,7 +653,7 @@ export default function VisualizationTab({ results, modelName = 'NZ Generic' }: 
     title: {
       ...CHART_TITLE_STYLE,
       text: 'Magnitude–Frequency Relation (Gutenberg–Richter)',
-      subtext: `Expected count of events ≥ M in the ${modelCurves.maxDur}-day window — the straight line reflects the b-value`,
+      subtext: `Expected count of events ≥ M in the ${modelCurves.maxDur}-day window; the straight line reflects the b-value`,
     },
     grid: { top: 80, bottom: 80, left: 70, right: 30 },
     legend: { bottom: 0, textStyle: { color: AXIS_LABEL_COLOR } },
@@ -1016,8 +1016,8 @@ export default function VisualizationTab({ results, modelName = 'NZ Generic' }: 
         <ul className="text-sm text-blue-700 dark:text-blue-400 space-y-1 list-disc list-inside">
           <li><strong>Probability:</strong> The likelihood of at least one aftershock of the selected size or larger, computed as 1&nbsp;&minus;&nbsp;e<sup>&minus;N</sup> under Poisson statistics.</li>
           <li><strong>Expected count:</strong> The mean number of aftershocks (N) predicted by the Reasenberg&ndash;Jones model.</li>
-          <li><strong>Rate decay:</strong> The Omori&ndash;Utsu law — a straight line on log&ndash;log axes with slope &minus;p — showing where the forecast window sits on the sequence&rsquo;s decay history.</li>
-          <li><strong>Magnitude&ndash;frequency:</strong> The Gutenberg&ndash;Richter relation — a straight line on the log axis whose slope is the b-value; each unit decrease in magnitude multiplies expected counts by ~10<sup>b</sup>.</li>
+          <li><strong>Rate decay:</strong> The Omori&ndash;Utsu law, a straight line on log&ndash;log axes with slope &minus;p, showing where the forecast window sits on the sequence&rsquo;s decay history.</li>
+          <li><strong>Magnitude&ndash;frequency:</strong> The Gutenberg&ndash;Richter relation, a straight line on the log axis whose slope is the b-value; each unit decrease in magnitude multiplies expected counts by ~10<sup>b</sup>.</li>
           <li><strong>Darker red = larger magnitude</strong> in all multi-series charts; the exact values behind every chart are available in the Table View.</li>
         </ul>
       </div>
