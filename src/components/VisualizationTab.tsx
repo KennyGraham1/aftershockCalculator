@@ -128,7 +128,17 @@ interface TooltipParam {
   seriesName?: string;
   marker?: string;
   name?: string;
+  dataIndex?: number;
   value: number | [number, number];
+}
+
+/** Format an expected count with appropriate precision (never shows a
+ *  misleading "0.0" for small but non-zero expectations) */
+function formatCount(v: number): string {
+  if (!Number.isFinite(v)) return '–';
+  if (v >= 100) return v.toFixed(0);
+  if (v >= 0.095) return v.toFixed(1);
+  return v.toPrecision(1);
 }
 
 function pairY(p: TooltipParam): number {
@@ -240,7 +250,7 @@ export default function VisualizationTab({ results, modelName = 'NZ Generic' }: 
       : availableDurations[availableDurations.length - 1];
   }, [availableDurations, selectedDuration]);
 
-  // Selected magnitude threshold key ('m1', 'm2', 'm3') for OAF Overview
+  // Selected magnitude threshold key ('m1', 'm2', 'm3') for Forecast Overview
   const [selectedMagKey, setSelectedMagKey] = useState<'m1' | 'm2' | 'm3'>('m1');
 
   // Extract magnitude threshold values dynamically
@@ -304,7 +314,7 @@ export default function VisualizationTab({ results, modelName = 'NZ Generic' }: 
   const chartData = useMemo(() => {
     if (!results) return null;
 
-    const durations = results.forecasts.map(f => `${f.duration} days`);
+    const durations = results.forecasts.map(f => `${f.duration} ${f.duration === 1 ? 'day' : 'days'}`);
 
     const probM1 = results.forecasts.map(f => parsePercentage(f.m1.probability));
     const probM2 = results.forecasts.map(f => parsePercentage(f.m2.probability));
@@ -349,7 +359,9 @@ export default function VisualizationTab({ results, modelName = 'NZ Generic' }: 
     // Daily aftershock rate vs time since mainshock (log-log), covering the
     // full decay history so the forecast window's position is visible
     const tauMin = Math.max(0.01, mp.c);
-    const tauMax = t0 + maxDur;
+    // Keep at least one decade of x-range even if a large custom c-value
+    // exceeds the forecast horizon (otherwise the log sampling runs backwards)
+    const tauMax = Math.max(t0 + maxDur, tauMin * 10);
     const rateVsTime = thresholds.map(({ key, m }) => ({
       key,
       label: `M${m}+`,
@@ -417,7 +429,7 @@ export default function VisualizationTab({ results, modelName = 'NZ Generic' }: 
     title: {
       ...CHART_TITLE_STYLE,
       text: `Likely Number of ${selectedOafData.label} Aftershocks`,
-      subtext: `Within ${effectiveDuration} days — the bars sum to the reported ${selectedProb < 1 ? '<1' : selectedProb > 99 ? '>99' : Math.round(selectedProb)}% probability of one or more events`,
+      subtext: `Within ${effectiveDuration} ${effectiveDuration === 1 ? 'day' : 'days'} — the bars sum to the reported ${selectedProb < 1 ? '<1' : selectedProb > 99 ? '>99' : Math.round(selectedProb)}% probability of one or more events`,
     },
     grid: { top: 85, bottom: 55, left: 65, right: 25 },
     xAxis: categoryAxis(poissonData.map(d => d.name), 'Number of Aftershocks'),
@@ -427,8 +439,8 @@ export default function VisualizationTab({ results, modelName = 'NZ Generic' }: 
       axisPointer: { type: 'shadow' },
       formatter: (params: TooltipParam[]) => {
         const pt = params[0];
-        const label = pt.name === '1' ? 'Exactly 1 event' : pt.name === '5+' ? '5 or more events' : `Exactly ${pt.name} events`;
-        return `${label}<br/>Probability: <b>${pairY(pt).toFixed(1)}%</b>`;
+        const label = pt.name === '1' ? 'Exactly 1 aftershock' : pt.name === '5+' ? '5 or more aftershocks' : `Exactly ${pt.name} aftershocks`;
+        return `${label} within ${effectiveDuration} ${effectiveDuration === 1 ? 'day' : 'days'}<br/>Probability: <b>${pairY(pt).toFixed(1)}%</b>`;
       },
     },
     series: [
@@ -465,7 +477,15 @@ export default function VisualizationTab({ results, modelName = 'NZ Generic' }: 
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
-      valueFormatter: (value: unknown) => `${Number(value).toFixed(1)}%`,
+      // Quote the table's exact probability strings (e.g. "<1%", ">99%") so
+      // the chart can never disagree with the reported values
+      formatter: (params: TooltipParam[]) =>
+        `${params[0].name}<br/>` +
+        params.map(p => {
+          const bin = p.seriesName === results.rangeLabels.range1 ? 'm1' : p.seriesName === results.rangeLabels.range2 ? 'm2' : 'm3';
+          const exact = p.dataIndex !== undefined ? results.forecasts[p.dataIndex][bin].probability : `${pairY(p).toFixed(0)}%`;
+          return `${p.marker ?? ''}${p.seriesName}: <b>${exact}</b>`;
+        }).join('<br/>'),
     },
     series: [
       { name: chartData.rangeLabels.range1, type: 'bar', data: chartData.probM1, itemStyle: { color: RAMP.m1, borderRadius: [4, 4, 0, 0] } },
@@ -490,7 +510,14 @@ export default function VisualizationTab({ results, modelName = 'NZ Generic' }: 
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
-      valueFormatter: (value: unknown) => Number(value).toFixed(1),
+      // Quote the table's exact expected-count strings for consistency
+      formatter: (params: TooltipParam[]) =>
+        `${params[0].name}<br/>` +
+        params.map(p => {
+          const bin = p.seriesName === results.rangeLabels.range1 ? 'm1' : p.seriesName === results.rangeLabels.range2 ? 'm2' : 'm3';
+          const exact = p.dataIndex !== undefined ? results.forecasts[p.dataIndex][bin].averageNumber : formatCount(pairY(p));
+          return `${p.marker ?? ''}${p.seriesName}: <b>${exact}</b> expected`;
+        }).join('<br/>'),
     },
     series: [
       { name: chartData.rangeLabels.range1, type: 'bar', data: chartData.avgM1, itemStyle: { color: RAMP.m1, borderRadius: [4, 4, 0, 0] } },
@@ -606,7 +633,7 @@ export default function VisualizationTab({ results, modelName = 'NZ Generic' }: 
       trigger: 'axis',
       formatter: (params: TooltipParam[]) =>
         `Day ${pairX(params[0]).toFixed(1)}<br/>` +
-        params.map(p => `${p.marker ?? ''}${p.seriesName}: <b>${pairY(p).toFixed(1)}</b>`).join('<br/>'),
+        params.map(p => `${p.marker ?? ''}${p.seriesName}: <b>${formatCount(pairY(p))}</b> expected`).join('<br/>'),
     },
     series: modelCurves.cumulative.map(s => ({
       name: s.label,
@@ -710,7 +737,7 @@ export default function VisualizationTab({ results, modelName = 'NZ Generic' }: 
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
             }`}
           >
-            📋 OAF Overview
+           Forecast Overview
           </button>
           <button
             onClick={() => setActiveSubTab('charts')}
@@ -720,7 +747,7 @@ export default function VisualizationTab({ results, modelName = 'NZ Generic' }: 
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
             }`}
           >
-            📊 Detailed Charts
+            More Charts
           </button>
         </div>
       </div>

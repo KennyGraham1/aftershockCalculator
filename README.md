@@ -13,6 +13,8 @@ A web application for generating earthquake aftershock forecasts based on the Om
   - Custom user-defined parameters
 - **Configurable Forecasts**: Adjustable forecast durations and magnitude thresholds
 - **Statistical Output**: Expected aftershock counts, 95% confidence intervals, and probability of occurrence
+- **Visualizations**: Interactive Apache ECharts plots — outcome distributions, Omori–Utsu rate decay,
+  probability growth over time, cumulative expected counts, and the Gutenberg–Richter magnitude–frequency relation
 - **CSV Export**: Download forecast results for further analysis
 
 ## Tech Stack
@@ -20,6 +22,8 @@ A web application for generating earthquake aftershock forecasts based on the Om
 - **Framework**: Next.js 14 (App Router)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS v4
+- **Charts**: Apache ECharts (via echarts-for-react)
+- **Testing**: Vitest
 - **Font**: Inter (Google Fonts)
 
 ## Project Structure
@@ -31,13 +35,17 @@ src/
 │   ├── page.tsx        # Main calculator page
 │   └── globals.css     # Global styles
 ├── components/
-│   ├── QuakeInput.tsx      # Earthquake ID input and data fetching
-│   ├── Parameters.tsx      # Magnitude and duration configuration
-│   ├── ModelSelector.tsx   # Seismicity model selection
-│   └── ResultsTable.tsx    # Forecast results display
+│   ├── QuakeInput.tsx        # Earthquake ID input and data fetching
+│   ├── Parameters.tsx        # Magnitude and duration configuration
+│   ├── ModelSelector.tsx     # Seismicity model selection
+│   ├── ResultsTable.tsx      # Forecast results display
+│   ├── VisualizationTab.tsx  # ECharts forecast visualizations
+│   └── InfoTooltip.tsx       # Accessible tooltip component
 ├── lib/
-│   ├── api.ts          # GeoNet API client
-│   └── calculations.ts # Aftershock calculation logic (Omori-Utsu)
+│   ├── api.ts              # GeoNet API client
+│   ├── api.test.ts         # API helper tests
+│   ├── calculations.ts     # Aftershock calculation logic (Omori-Utsu)
+│   └── calculations.test.ts # Calculation tests (Poisson quantiles, Omori integral, forecasts)
 └── types/
     └── index.ts        # TypeScript type definitions and model presets
 ```
@@ -61,6 +69,12 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Testing
+
+```bash
+npm test
+```
 
 ### Build
 

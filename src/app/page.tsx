@@ -295,7 +295,7 @@ export default function Home() {
     ];
 
     const rows = results.forecasts.map(f => [
-      `${f.duration} days`,
+      `${f.duration} ${f.duration === 1 ? 'day' : 'days'}`,
       f.m3.averageNumber, f.m3.range, f.m3.probability,
       f.m2.averageNumber, f.m2.range, f.m2.probability,
       f.m1.averageNumber, f.m1.range, f.m1.probability,

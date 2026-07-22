@@ -174,7 +174,7 @@ export default function ResultsTable({
                   scope="row"
                   className="border border-gray-300 dark:border-gray-600 px-4 py-2 font-normal text-left dark:text-gray-100 duration-cell"
                 >
-                  within {forecast.duration} days
+                  within {forecast.duration} {forecast.duration === 1 ? 'day' : 'days'}
                 </th>
                 {/* M3 results (lowest magnitude range) */}
                 <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center dark:text-gray-200">
