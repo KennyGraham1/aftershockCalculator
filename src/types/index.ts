@@ -66,6 +66,12 @@ export interface CalculationResults {
     range3: string; // e.g., "M3-M4"
   };
   forecasts: DurationForecast[];
+  // Inputs snapshot, so visualizations can evaluate the model continuously
+  // (rate curves, magnitude-frequency plots) rather than only at table values
+  mainshockMagnitude: number;
+  modelParams: ModelParameters;
+  /** Days between the mainshock origin time and the forecast start */
+  rangeStartDays: number;
 }
 
 export type ModelType = 'nz' | 'sz' | 'california' | 'scr' | 'custom';

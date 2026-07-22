@@ -27,10 +27,11 @@ const PARAM_INFO: Record<keyof ModelParameters, { label: string; description: st
     description: 'Productivity parameter',
     tooltip: (
       <>
-        <strong>Productivity (a)</strong>
+        <strong>Productivity Parameter (a)</strong>
         <p className="mt-1">
-          Controls how many aftershocks occur. More negative values mean fewer aftershocks.
-          Typical range: -4 to 0.
+          Sets the overall rate of aftershock occurrence for a sequence. More
+          negative values correspond to lower aftershock productivity. Published
+          regional calibrations generally fall between &minus;4 and 0.
         </p>
       </>
     ),
@@ -40,10 +41,12 @@ const PARAM_INFO: Record<keyof ModelParameters, { label: string; description: st
     description: 'Magnitude scaling',
     tooltip: (
       <>
-        <strong>Gutenberg-Richter b-value</strong>
+        <strong>Gutenberg&ndash;Richter b-value</strong>
         <p className="mt-1">
-          Controls the ratio of small to large earthquakes. A b-value of 1.0 means there are
-          ~10 times more M3 than M4 earthquakes. Typical range: 0.5 to 1.5.
+          Governs the relative frequency of small versus large events. A value
+          of 1.0 implies a tenfold increase in event frequency for each unit
+          decrease in magnitude. Published values generally fall between 0.5
+          and 1.5.
         </p>
       </>
     ),
@@ -55,8 +58,10 @@ const PARAM_INFO: Record<keyof ModelParameters, { label: string; description: st
       <>
         <strong>Omori c-value (days)</strong>
         <p className="mt-1">
-          A small time offset that prevents the rate from going to infinity at t=0.
-          Smaller values mean higher initial rates. Typical range: 0.001 to 1.0 days.
+          A short time constant that regularises the aftershock rate in the
+          period immediately following the mainshock. Smaller values imply
+          higher initial rates. Published values generally fall between 0.001
+          and 1.0 days.
         </p>
       </>
     ),
@@ -68,8 +73,10 @@ const PARAM_INFO: Record<keyof ModelParameters, { label: string; description: st
       <>
         <strong>Omori p-value (decay exponent)</strong>
         <p className="mt-1">
-          Controls how fast aftershock rates decay. p=1 is standard Omori decay.
-          p&gt;1 means faster decay; p&lt;1 means slower decay. Typical range: 0.5 to 2.0.
+          The exponent governing the temporal decay of aftershock rates.
+          A value of 1 corresponds to classical Omori decay; values above 1
+          indicate faster decay and values below 1 slower decay. Published
+          values generally fall between 0.5 and 2.0.
         </p>
       </>
     ),
@@ -80,14 +87,15 @@ const SEISMIC_MODEL_TOOLTIP = (
   <>
     <strong>Seismic Model Selection</strong>
     <p className="mt-1">
-      Different tectonic regions have different aftershock characteristics.
-      Choose the model that best matches your earthquake&apos;s location:
+      Aftershock behaviour varies systematically between tectonic settings.
+      Select the parameter set calibrated for the region most representative
+      of the mainshock:
     </p>
     <ul className="mt-1 ml-3 text-xs list-disc">
-      <li><strong>NZ Generic</strong> - New Zealand crustal earthquakes</li>
-      <li><strong>Subduction Zone</strong> - Hikurangi/plate interface events</li>
-      <li><strong>California (ACR)</strong> - Classic USGS parameters</li>
-      <li><strong>Stable Continental</strong> - Low-seismicity regions</li>
+      <li><strong>NZ Generic</strong> &mdash; New Zealand crustal earthquakes (ESNZ calibration)</li>
+      <li><strong>Subduction Zone</strong> &mdash; Hikurangi/Puysegur plate-interface events</li>
+      <li><strong>California (ACR)</strong> &mdash; Reasenberg &amp; Jones (1989) generic parameters</li>
+      <li><strong>Stable Continental</strong> &mdash; low-seismicity intraplate regions</li>
     </ul>
   </>
 );

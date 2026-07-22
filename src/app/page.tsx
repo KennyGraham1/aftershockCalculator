@@ -50,12 +50,15 @@ export default function Home() {
   const [customParams, setCustomParams] = useState<ModelParameters>(MODEL_PRESETS.nz);
 
   // State for forecast configuration
-  const [durations, setDurations] = useState<[number, number, number]>([1, 7, 30]);
+  const [durations, setDurations] = useState<number[]>([1, 7, 30]);
   const [magnitudeRanges, setMagnitudeRanges] = useState({ m1: 5, m2: 4, m3: 3 });
 
   // State for results and errors
   const [results, setResults] = useState<CalculationResults | null>(null);
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
+
+  // Track when the forecast was last generated (for print footer)
+  const [forecastGeneratedAt, setForecastGeneratedAt] = useState<string>('');
 
   // State for results view tab
   const [activeResultsTab, setActiveResultsTab] = useState<ResultsViewTab>('table');
@@ -138,9 +141,27 @@ export default function Home() {
 
   const handleDurationChange = useCallback((index: number, value: number) => {
     setDurations(prev => {
-      const newDurations = [...prev] as [number, number, number];
-      newDurations[index] = Math.max(1, Math.min(730, value));
-      return newDurations;
+      const next = [...prev];
+      next[index] = Math.max(1, Math.min(730, value));
+      return next;
+    });
+    setResults(null);
+  }, []);
+
+  const handleAddDuration = useCallback(() => {
+    setDurations(prev => {
+      // Suggest a value larger than the current maximum
+      const max = prev.length > 0 ? Math.max(...prev) : 30;
+      const next = max < 365 ? 365 : max + 365;
+      return [...prev, Math.min(next, 730)];
+    });
+    setResults(null);
+  }, []);
+
+  const handleRemoveDuration = useCallback((index: number) => {
+    setDurations(prev => {
+      if (prev.length <= 1) return prev; // keep at least one
+      return prev.filter((_, i) => i !== index);
     });
     setResults(null);
   }, []);
@@ -196,9 +217,28 @@ export default function Home() {
         errors.push({ field: 'duration', message: `Forecast duration ${i + 1} must be positive` });
       }
     }
+    if (new Set(durations).size !== durations.length) {
+      errors.push({ field: 'duration', message: 'Forecast durations must be unique' });
+    }
+
+    // Hard model-parameter validation: values that make the maths undefined
+    // (soft literature-bound checks are shown separately as warnings)
+    const params = modelType === 'custom' ? customParams : MODEL_PRESETS[modelType];
+    if (!Number.isFinite(params.a)) {
+      errors.push({ field: 'params', message: "Parameter 'a' must be a finite number" });
+    }
+    if (!Number.isFinite(params.b) || params.b <= 0) {
+      errors.push({ field: 'params', message: "Parameter 'b' must be greater than 0" });
+    }
+    if (!Number.isFinite(params.c) || params.c <= 0) {
+      errors.push({ field: 'params', message: "Parameter 'c' must be greater than 0" });
+    }
+    if (!Number.isFinite(params.p) || params.p <= 0) {
+      errors.push({ field: 'params', message: "Parameter 'p' must be greater than 0" });
+    }
 
     return errors;
-  }, [magnitude, magnitudeRanges, quakeTime, startTime, durations]);
+  }, [magnitude, magnitudeRanges, quakeTime, startTime, durations, modelType, customParams]);
 
   const handleCalculate = useCallback(() => {
     const errors = validateInputs();
@@ -216,9 +256,18 @@ export default function Home() {
     const startDate = new Date(startTime);
     const rangeStartFromQuakeTime = (startDate.valueOf() - quakeDate.valueOf()) / (1000 * 60 * 60 * 24);
 
-    const forecasts = durations.map(duration =>
-      calculateDurationForecast(duration, mag, m1, m2, m3, rangeStartFromQuakeTime, params)
-    );
+    let forecasts;
+    try {
+      forecasts = durations.map(duration =>
+        calculateDurationForecast(duration, mag, m1, m2, m3, rangeStartFromQuakeTime, params)
+      );
+    } catch (err) {
+      setValidationErrors([{
+        field: 'calculation',
+        message: err instanceof Error ? err.message : 'Calculation failed. Please check your inputs.',
+      }]);
+      return;
+    }
 
     setResults({
       quakeId,
@@ -228,7 +277,11 @@ export default function Home() {
         range3: `M${m3}-M${m2}`,
       },
       forecasts,
+      mainshockMagnitude: mag,
+      modelParams: params,
+      rangeStartDays: rangeStartFromQuakeTime,
     });
+    setForecastGeneratedAt(new Date().toISOString());
   }, [magnitude, magnitudeRanges, quakeTime, startTime, modelType, customParams, durations, quakeId, validateInputs]);
 
   const handleExportCSV = useCallback(() => {
@@ -351,6 +404,8 @@ export default function Home() {
           onQuakeTimeChange={handleParameterChange(setQuakeTime)}
           onStartTimeChange={handleParameterChange(setStartTime)}
           onDurationsChange={handleDurationChange}
+          onAddDuration={handleAddDuration}
+          onRemoveDuration={handleRemoveDuration}
           onMagnitudeRangesChange={handleMagnitudeRangesChange}
         />
 
@@ -451,6 +506,9 @@ export default function Home() {
                 results={results}
                 onExportCSV={handleExportCSV}
                 modelName={MODEL_INFO[modelType].name}
+                startTime={startTime}
+                forecastGeneratedAt={forecastGeneratedAt}
+                modelParams={modelType === 'custom' ? customParams : MODEL_PRESETS[modelType]}
               />
             ) : (
               <VisualizationTab

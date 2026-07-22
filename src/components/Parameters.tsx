@@ -7,19 +7,23 @@ import InfoTooltip from './InfoTooltip';
 const TOOLTIPS = {
   magnitude: (
     <>
-      <strong>Mainshock Magnitude</strong>
+      <strong>Mainshock Magnitude (M<sub>w</sub>)</strong>
       <p className="mt-1">
-        The moment magnitude (Mw) of the mainshock earthquake. Larger magnitudes
-        result in more predicted aftershocks.
+        The moment magnitude of the initiating earthquake. In the
+        Reasenberg&ndash;Jones model, aftershock productivity scales
+        exponentially with mainshock magnitude, so this value strongly
+        influences all forecast quantities.
       </p>
     </>
   ),
   quakeTime: (
     <>
-      <strong>Earthquake Origin Time</strong>
+      <strong>Mainshock Origin Time</strong>
       <p className="mt-1">
-        When the mainshock occurred. Aftershock rates decay over time following
-        the Omori-Utsu law, so accurate timing is important for forecasts.
+        The date and time at which the mainshock occurred. All forecast windows
+        are measured relative to this time. Aftershock rates decay with elapsed
+        time in accordance with the Omori&ndash;Utsu law, so an accurate origin
+        time is essential for a reliable forecast.
       </p>
     </>
   ),
@@ -27,9 +31,14 @@ const TOOLTIPS = {
     <>
       <strong>Forecast Start Time</strong>
       <p className="mt-1">
-        When your forecast period begins. Set this to &quot;now&quot; to forecast
-        from the current moment, or set it to a past time to analyze historical
-        aftershock sequences.
+        The beginning of the forecast window. Use the current time for a
+        prospective forecast, or select an earlier time to reproduce a forecast
+        as it would have been issued during a historical sequence. The start
+        time must not precede the mainshock origin time.
+      </p>
+      <p className="mt-1 text-xs">
+        Note: the longer the interval between the mainshock and the forecast
+        start, the lower the expected aftershock rates.
       </p>
     </>
   ),
@@ -37,12 +46,13 @@ const TOOLTIPS = {
     <>
       <strong>Forecast Durations</strong>
       <p className="mt-1">
-        Time windows (in days) for your aftershock forecasts. Common choices:
+        The length of each forecast window, in days, measured from the forecast
+        start time. Standard reporting intervals:
       </p>
       <ul className="mt-1 ml-3 text-xs list-disc">
-        <li><strong>1 day</strong> - Immediate hazard assessment</li>
-        <li><strong>7 days</strong> - Short-term planning</li>
-        <li><strong>30 days</strong> - Extended outlook</li>
+        <li><strong>1 day</strong> &mdash; immediate response and emergency operations</li>
+        <li><strong>7 days</strong> &mdash; short-term operational planning</li>
+        <li><strong>30 days</strong> &mdash; extended situational outlook</li>
       </ul>
     </>
   ),
@@ -50,13 +60,14 @@ const TOOLTIPS = {
     <>
       <strong>Magnitude Thresholds</strong>
       <p className="mt-1">
-        Define the magnitude bins for your forecast. Results show probability
-        of at least one earthquake in each range:
+        Thresholds defining the reported magnitude bins. For each bin, the
+        forecast provides the expected number of events and the probability of
+        one or more occurrences:
       </p>
       <ul className="mt-1 ml-3 text-xs list-disc">
-        <li><strong>M1</strong> - Highest threshold (e.g., M5+ damaging quakes)</li>
-        <li><strong>M2</strong> - Middle threshold (e.g., M4+ felt quakes)</li>
-        <li><strong>M3</strong> - Lowest threshold (e.g., M3+ minor quakes)</li>
+        <li><strong>M1</strong> &mdash; highest threshold (e.g., M5+, potentially damaging events)</li>
+        <li><strong>M2</strong> &mdash; intermediate threshold (e.g., M4+, widely felt events)</li>
+        <li><strong>M3</strong> &mdash; lowest threshold (e.g., M3+, locally felt events)</li>
       </ul>
     </>
   ),
@@ -66,12 +77,14 @@ interface ParametersProps {
   magnitude: string;
   quakeTime: string;
   startTime: string;
-  durations: [number, number, number];
+  durations: number[];
   magnitudeRanges: { m1: number; m2: number; m3: number };
   onMagnitudeChange: (value: string) => void;
   onQuakeTimeChange: (value: string) => void;
   onStartTimeChange: (value: string) => void;
   onDurationsChange: (index: number, value: number) => void;
+  onAddDuration: () => void;
+  onRemoveDuration: (index: number) => void;
   onMagnitudeRangesChange: (key: 'm1' | 'm2' | 'm3', value: number) => void;
   disabled?: boolean;
 }
@@ -113,7 +126,6 @@ function parseLocalToISO(localDateTime: string): string {
 
 
 
-const DURATION_LABELS = ['Short-term', 'Medium-term', 'Long-term'] as const;
 const MAG_RANGE_LABELS = { m1: 'M1 (highest)', m2: 'M2 (middle)', m3: 'M3 (lowest)' } as const;
 
 export default function Parameters({
@@ -126,6 +138,8 @@ export default function Parameters({
   onQuakeTimeChange,
   onStartTimeChange,
   onDurationsChange,
+  onAddDuration,
+  onRemoveDuration,
   onMagnitudeRangesChange,
   disabled = false,
 }: ParametersProps) {
@@ -259,30 +273,65 @@ export default function Parameters({
               Forecast lengths (days)
               <InfoTooltip content={TOOLTIPS.durations} />
             </legend>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 items-center">
               {durations.map((d, i) => (
-                <div key={i} className="flex flex-col">
-                  <label
-                    htmlFor={`${baseId}-duration-${i}`}
-                    className="sr-only"
-                  >
-                    {DURATION_LABELS[i]} duration
-                  </label>
-                  <input
-                    id={`${baseId}-duration-${i}`}
-                    type="number"
-                    min="1"
-                    max="730"
-                    value={d}
-                    onChange={(e) => onDurationsChange(i, parseInt(e.target.value) || 1)}
-                    className="w-20 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md
-                               focus:outline-none focus:ring-2 focus:ring-blue-500
-                               dark:bg-gray-800 dark:text-gray-100"
-                    aria-label={`${DURATION_LABELS[i]} forecast duration in days`}
-                  />
+                <div key={i} className="flex items-center gap-1">
+                  <div className="flex flex-col">
+                    <label
+                      htmlFor={`${baseId}-duration-${i}`}
+                      className="sr-only"
+                    >
+                      Forecast duration {i + 1}
+                    </label>
+                    <input
+                      id={`${baseId}-duration-${i}`}
+                      type="number"
+                      min="1"
+                      max="730"
+                      value={d}
+                      onChange={(e) => onDurationsChange(i, parseInt(e.target.value) || 1)}
+                      className="w-20 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md
+                                 focus:outline-none focus:ring-2 focus:ring-blue-500
+                                 dark:bg-gray-800 dark:text-gray-100"
+                      aria-label={`Forecast duration ${i + 1} in days`}
+                    />
+                  </div>
+                  {durations.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => onRemoveDuration(i)}
+                      className="mt-0.5 w-6 h-6 flex items-center justify-center rounded-full
+                                 text-gray-400 hover:text-red-500 hover:bg-red-50
+                                 dark:hover:text-red-400 dark:hover:bg-red-900/20
+                                 transition-colors focus:outline-none focus:ring-2 focus:ring-red-400"
+                      aria-label={`Remove duration ${d} days`}
+                      title="Remove this duration"
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
               ))}
+              {durations.length < 8 && (
+                <button
+                  type="button"
+                  onClick={onAddDuration}
+                  className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-dashed
+                             border-gray-300 dark:border-gray-600
+                             text-gray-400 dark:text-gray-500
+                             hover:border-blue-400 hover:text-blue-500
+                             dark:hover:border-blue-500 dark:hover:text-blue-400
+                             transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  aria-label="Add forecast duration"
+                  title="Add another forecast duration"
+                >
+                  +
+                </button>
+              )}
             </div>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              1–730 days each · up to 8 periods
+            </p>
           </fieldset>
         </div>
       </div>

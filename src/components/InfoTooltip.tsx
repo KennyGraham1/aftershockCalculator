@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useId } from 'react';
 
 interface InfoTooltipProps {
   /** The tooltip content - can be plain text or JSX */
@@ -18,6 +18,7 @@ interface InfoTooltipProps {
 export default function InfoTooltip({ content, className = '' }: InfoTooltipProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [position, setPosition] = useState<'top' | 'bottom'>('top');
+  const tooltipId = useId();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
 
@@ -95,7 +96,7 @@ export default function InfoTooltip({ content, className = '' }: InfoTooltipProp
                    border border-blue-300 dark:border-blue-700"
         aria-label="More information"
         aria-expanded={isOpen}
-        aria-describedby={isOpen ? 'tooltip-content' : undefined}
+        aria-describedby={isOpen ? tooltipId : undefined}
       >
         ?
       </button>
@@ -103,7 +104,7 @@ export default function InfoTooltip({ content, className = '' }: InfoTooltipProp
       {isOpen && (
         <div
           ref={tooltipRef}
-          id="tooltip-content"
+          id={tooltipId}
           role="tooltip"
           style={{ zIndex: 9999 }}
           className={`absolute w-64 p-3 text-sm text-gray-700 dark:text-gray-200

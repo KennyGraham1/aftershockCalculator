@@ -165,6 +165,12 @@ export function calculateDurationForecast(
 
   const { a, b, c, p } = params;
 
+  // Guard against parameters that make the maths undefined (e.g. c = 0 with
+  // rangeStart = 0 yields a division by zero in the Omori integral)
+  if (!Number.isFinite(a) || !Number.isFinite(b) || b <= 0 || !Number.isFinite(c) || c <= 0 || !Number.isFinite(p) || p <= 0) {
+    throw new Error("Model parameters must be finite, with 'b', 'c' and 'p' greater than 0");
+  }
+
   const rangeEnd = rangeStartFromQuakeTime + duration;
   const omoriIntegral = calculateOmoriIntegral(rangeStartFromQuakeTime, rangeEnd, c, p);
 
