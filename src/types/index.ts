@@ -4,6 +4,10 @@ export interface QuakeData {
   quakeId: string;
   magnitude: number;
   quakeTime: string;
+  /** Epicentre longitude (degrees east); absent if GeoNet omitted geometry */
+  longitude?: number;
+  /** Epicentre latitude (degrees north); absent if GeoNet omitted geometry */
+  latitude?: number;
 }
 
 export interface GeoNetQuakeResponse {
@@ -72,6 +76,10 @@ export interface CalculationResults {
   modelParams: ModelParameters;
   /** Days between the mainshock origin time and the forecast start */
   rangeStartDays: number;
+  /** Mainshock origin time (ISO), for anchoring forecast windows in real time */
+  quakeTimeISO: string;
+  /** Epicentre, when known (from GeoNet or demo); needed for evaluation */
+  epicenter?: { latitude: number; longitude: number };
 }
 
 export type ModelType = 'nz' | 'sz' | 'california' | 'scr' | 'custom';
@@ -82,7 +90,7 @@ export type ModelType = 'nz' | 'sz' | 'california' | 'scr' | 'custom';
  * References:
  * - NZ Generic: Earth Sciences New Zealand (ESNZ) calibration
  * - Subduction Zone: ESNZ NZ subduction zone calibration
- * - California (ACR): Reasenberg & Jones (1989, 1994); Hardebeck et al. (2018)
+ * - California (ACR): Reasenberg & Jones (1989, 1994); Hardebeck et al. (2019)
  * - Stable Continental: Page et al. (2016) global SCR parameters
  */
 export const MODEL_PRESETS: Record<ModelType, ModelParameters> = {

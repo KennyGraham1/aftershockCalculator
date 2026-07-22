@@ -6,12 +6,14 @@ import Parameters from '@/components/Parameters';
 import ModelSelector from '@/components/ModelSelector';
 import ResultsTable from '@/components/ResultsTable';
 import VisualizationTab from '@/components/VisualizationTab';
+import EvaluationTab from '@/components/EvaluationTab';
+import AboutTab from '@/components/AboutTab';
 import { fetchQuakeData, calculateInitialMagnitudeRanges } from '@/lib/api';
 import { calculateDurationForecast, validateModelParameters } from '@/lib/calculations';
 import type { ModelType, ModelParameters, CalculationResults } from '@/types';
 import { MODEL_PRESETS, MODEL_INFO } from '@/types';
 
-type ResultsViewTab = 'table' | 'visualization';
+type ResultsViewTab = 'table' | 'visualization' | 'evaluation' | 'about';
 
 interface ParameterWarning {
   message: string;
@@ -29,8 +31,10 @@ const DEMO_EARTHQUAKE = {
   magnitude: 7.8,
   // Kaikoura earthquake: 2016-11-13T11:02:56Z
   quakeTime: '2016-11-13T11:02:56.000Z',
+  latitude: -42.69,
+  longitude: 173.02,
   location: 'Kaikōura, New Zealand',
-  description: 'The 2016 Kaikōura earthquake was a powerful M7.8 event that struck New Zealand\'s South Island. It\'s an excellent example for demonstrating aftershock forecasting.',
+  description: 'The 2016 Kaikōura earthquake was an M7.8 event in New Zealand\'s South Island. Its long, well-recorded aftershock sequence makes it a good test case for the forecast model.',
 };
 
 export default function Home() {
@@ -41,6 +45,7 @@ export default function Home() {
   const [startTime, setStartTime] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [loadedQuakeInfo, setLoadedQuakeInfo] = useState<{ magnitude: number; time: string } | null>(null);
+  const [epicenter, setEpicenter] = useState<{ latitude: number; longitude: number } | null>(null);
 
   // State for demo mode
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -88,6 +93,7 @@ export default function Home() {
     setResults(null);
     setValidationErrors([]);
     setLoadedQuakeInfo(null);
+    setEpicenter(null);
     setIsDemoMode(false);
 
     try {
@@ -99,6 +105,9 @@ export default function Home() {
       const ranges = calculateInitialMagnitudeRanges(data.magnitude);
       setMagnitudeRanges(ranges);
       setLoadedQuakeInfo({ magnitude: data.magnitude, time: data.quakeTime });
+      if (data.latitude !== undefined && data.longitude !== undefined) {
+        setEpicenter({ latitude: data.latitude, longitude: data.longitude });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -129,6 +138,7 @@ export default function Home() {
       magnitude: DEMO_EARTHQUAKE.magnitude,
       time: DEMO_EARTHQUAKE.quakeTime,
     });
+    setEpicenter({ latitude: DEMO_EARTHQUAKE.latitude, longitude: DEMO_EARTHQUAKE.longitude });
   }, []);
 
   const handleModelChange = useCallback((type: ModelType) => {
@@ -280,9 +290,11 @@ export default function Home() {
       mainshockMagnitude: mag,
       modelParams: params,
       rangeStartDays: rangeStartFromQuakeTime,
+      quakeTimeISO: quakeDate.toISOString(),
+      epicenter: epicenter ?? undefined,
     });
     setForecastGeneratedAt(new Date().toISOString());
-  }, [magnitude, magnitudeRanges, quakeTime, startTime, modelType, customParams, durations, quakeId, validateInputs]);
+  }, [magnitude, magnitudeRanges, quakeTime, startTime, modelType, customParams, durations, quakeId, epicenter, validateInputs]);
 
   const handleExportCSV = useCallback(() => {
     if (!results) return;
@@ -302,7 +314,7 @@ export default function Home() {
     ]);
 
     const csvContent = [
-      `# AfterShock Forecast for ${results.quakeId}`,
+      `# Aftershock forecast for ${results.quakeId}`,
       `# Generated: ${new Date().toISOString()}`,
       `# Model: ${modelType.toUpperCase()}`,
       '',
@@ -344,7 +356,7 @@ export default function Home() {
                 </p>
                 <p className="text-blue-600 dark:text-blue-500 text-xs">
                   Click <strong>Calculate Forecast</strong> below to see example results,
-                  or modify any parameters to explore different scenarios.
+                  or change any parameter first.
                 </p>
               </div>
               <button
@@ -363,11 +375,11 @@ export default function Home() {
           <div className="mb-6 p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700
                           shadow-sm print:hidden">
             <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-3">
-              👋 Welcome to the Aftershock Calculator
+              Aftershock Calculator
             </h2>
             <p className="text-gray-600 dark:text-gray-400 mb-4">
-              This tool forecasts the probability of aftershocks following an earthquake using
-              the Omori-Utsu law. Get started by:
+              This tool forecasts the expected number and probability of aftershocks following an
+              earthquake, using the Reasenberg&ndash;Jones model. To start:
             </p>
             <div className="flex flex-wrap gap-3">
               <button
@@ -469,8 +481,8 @@ export default function Home() {
           </p>
         )}
 
-        {/* Results Section with Tabs */}
-        {results && (
+        {/* Results Section with Tabs (About is always available) */}
+        {(
           <div className="mt-6">
             {/* Tab Navigation */}
             <div className="border-b border-gray-200 dark:border-gray-700 print:hidden">
@@ -497,21 +509,57 @@ export default function Home() {
                 >
                   📈 Visualization
                 </button>
+                <button
+                  onClick={() => setActiveResultsTab('evaluation')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    activeResultsTab === 'evaluation'
+                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                  }`}
+                  aria-current={activeResultsTab === 'evaluation' ? 'page' : undefined}
+                >
+                  🧪 Evaluation
+                </button>
+                <button
+                  onClick={() => setActiveResultsTab('about')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    activeResultsTab === 'about'
+                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                  }`}
+                  aria-current={activeResultsTab === 'about' ? 'page' : undefined}
+                >
+                  ℹ️ About
+                </button>
               </nav>
             </div>
 
             {/* Tab Content */}
-            {activeResultsTab === 'table' ? (
-              <ResultsTable
+            {activeResultsTab === 'about' ? (
+              <AboutTab />
+            ) : activeResultsTab === 'table' ? (
+              results ? (
+                <ResultsTable
+                  results={results}
+                  onExportCSV={handleExportCSV}
+                  modelName={MODEL_INFO[modelType].name}
+                  startTime={startTime}
+                  forecastGeneratedAt={forecastGeneratedAt}
+                  modelParams={modelType === 'custom' ? customParams : MODEL_PRESETS[modelType]}
+                />
+              ) : (
+                <div className="mt-6 p-8 text-center text-gray-500 dark:text-gray-400 print:hidden">
+                  <p>Calculate a forecast to see the results table</p>
+                </div>
+              )
+            ) : activeResultsTab === 'visualization' ? (
+              <VisualizationTab
                 results={results}
-                onExportCSV={handleExportCSV}
                 modelName={MODEL_INFO[modelType].name}
-                startTime={startTime}
-                forecastGeneratedAt={forecastGeneratedAt}
-                modelParams={modelType === 'custom' ? customParams : MODEL_PRESETS[modelType]}
               />
             ) : (
-              <VisualizationTab
+              <EvaluationTab
+                key={results?.quakeId ?? 'no-results'}
                 results={results}
                 modelName={MODEL_INFO[modelType].name}
               />

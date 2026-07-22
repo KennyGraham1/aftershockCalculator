@@ -3,7 +3,7 @@
 // References:
 //   - Reasenberg & Jones (1989, 1994): California aftershock parameters
 //   - Page et al. (2016): Global tectonic regime parameters
-//   - Hardebeck et al. (2018): Updated California parameters
+//   - Hardebeck et al. (2019): Updated California parameters
 
 import type { ModelParameters, DurationForecast } from '@/types';
 

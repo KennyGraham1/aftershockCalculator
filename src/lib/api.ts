@@ -89,7 +89,8 @@ export async function fetchQuakeData(quakeId: string): Promise<QuakeData> {
       );
     }
 
-    const quake = data.features[0].properties;
+    const feature = data.features[0];
+    const quake = feature.properties;
 
     // Validate the response data
     if (typeof quake.magnitude !== 'number' || isNaN(quake.magnitude)) {
@@ -106,10 +107,20 @@ export async function fetchQuakeData(quakeId: string): Promise<QuakeData> {
       );
     }
 
+    // Epicentre (GeoJSON coordinates are [lon, lat, ...]); optional so a
+    // missing geometry degrades gracefully rather than failing the load
+    const coords = feature.geometry?.coordinates;
+    const hasLocation =
+      Array.isArray(coords) &&
+      typeof coords[0] === 'number' && Number.isFinite(coords[0]) &&
+      typeof coords[1] === 'number' && Number.isFinite(coords[1]);
+
     return {
       quakeId: trimmedId,
       magnitude: quake.magnitude,
       quakeTime: quake.time,
+      longitude: hasLocation ? coords[0] : undefined,
+      latitude: hasLocation ? coords[1] : undefined,
     };
   } catch (error) {
     clearTimeout(timeoutId);
@@ -139,6 +150,98 @@ export async function fetchQuakeData(quakeId: string): Promise<QuakeData> {
       'An unexpected error occurred. Please try again.',
       'NETWORK_ERROR'
     );
+  }
+}
+
+const QUAKESEARCH_BASE = 'https://quakesearch.geonet.org.nz';
+const CATALOG_TIMEOUT_MS = 30000;
+/** Response sizes at or above this suggest the query hit a server cap */
+export const CATALOG_TRUNCATION_WARNING_COUNT = 3000;
+
+/** Format a Date for QuakeSearch (UTC, no timezone suffix) */
+function formatQuakeSearchDate(d: Date): string {
+  return d.toISOString().slice(0, 19);
+}
+
+interface QuakeSearchFeature {
+  properties: {
+    publicid: string;
+    origintime: string;
+    magnitude: number;
+    depth?: number;
+    eventtype?: string;
+  };
+  geometry: { coordinates: number[] };
+}
+
+/**
+ * Fetch the observed earthquake catalogue from GeoNet QuakeSearch for a
+ * bounding box, time range, and minimum magnitude. Non-earthquake event types
+ * (e.g. quarry blasts) are excluded. Longitudes may exceed 180 (QuakeSearch
+ * accepts the 0-360 convention across the dateline).
+ */
+export async function fetchObservedCatalog(
+  bbox: { minLon: number; minLat: number; maxLon: number; maxLat: number },
+  start: Date,
+  end: Date,
+  minMagnitude: number
+): Promise<import('./evaluation').ObservedEvent[]> {
+  const params = new URLSearchParams({
+    bbox: `${bbox.minLon.toFixed(4)},${bbox.minLat.toFixed(4)},${bbox.maxLon.toFixed(4)},${bbox.maxLat.toFixed(4)}`,
+    startdate: formatQuakeSearchDate(start),
+    enddate: formatQuakeSearchDate(end),
+    minmag: String(minMagnitude),
+  });
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), CATALOG_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(`${QUAKESEARCH_BASE}/geojson?${params}`, {
+      signal: controller.signal,
+      headers: { 'Accept': 'application/json' },
+    });
+
+    if (!response.ok) {
+      throw new ApiError(
+        `Failed to fetch the observed catalogue (HTTP ${response.status}). Please try again later.`,
+        'NETWORK_ERROR'
+      );
+    }
+
+    const data: { features?: QuakeSearchFeature[] } = await response.json();
+    const features = data.features ?? [];
+
+    return features
+      .filter(f =>
+        (!f.properties.eventtype || f.properties.eventtype === 'earthquake') &&
+        typeof f.properties.magnitude === 'number' &&
+        Array.isArray(f.geometry?.coordinates)
+      )
+      .map(f => ({
+        publicId: f.properties.publicid,
+        timeMs: new Date(f.properties.origintime).getTime(),
+        magnitude: f.properties.magnitude,
+        longitude: f.geometry.coordinates[0],
+        latitude: f.geometry.coordinates[1],
+        depthKm: typeof f.properties.depth === 'number' ? f.properties.depth : null,
+      }))
+      .filter(e => Number.isFinite(e.timeMs))
+      .sort((a, b) => a.timeMs - b.timeMs);
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new ApiError(
+        'Catalogue request timed out. Try a shorter window or higher magnitude threshold.',
+        'TIMEOUT'
+      );
+    }
+    throw new ApiError(
+      'Failed to fetch the observed catalogue. Please check your connection.',
+      'NETWORK_ERROR'
+    );
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 

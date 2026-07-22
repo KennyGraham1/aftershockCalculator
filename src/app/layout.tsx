@@ -7,7 +7,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "AfterShock Calculator",
+  title: "Aftershock Calculator",
   description: "Generate aftershock forecasts for earthquake events - Earth Sciences New Zealand (ESNZ)",
 };
 

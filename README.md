@@ -1,6 +1,6 @@
-# AfterShock Calculator
+# Aftershock Calculator
 
-A web application for generating earthquake aftershock forecasts based on the Omori-Utsu law and Poisson distribution. Built for Earth Sciences New Zealand (ESNZ).
+A web application for generating and evaluating earthquake aftershock forecasts with the Reasenberg–Jones model (Omori–Utsu decay with Poisson statistics). Built for Earth Sciences New Zealand (ESNZ).
 
 ## Features
 
@@ -15,14 +15,20 @@ A web application for generating earthquake aftershock forecasts based on the Om
 - **Statistical Output**: Expected aftershock counts, 95% confidence intervals, and probability of occurrence
 - **Visualizations**: Interactive Apache ECharts plots — outcome distributions, Omori–Utsu rate decay,
   probability growth over time, cumulative expected counts, and the Gutenberg–Richter magnitude–frequency relation
+- **Forecast Evaluation**: Retrospective testing against the observed GeoNet catalogue — Wells & Coppersmith
+  spatial regions, CSEP-style N-test, Brier and log scores, an interactive Leaflet map of the evaluation region,
+  and PDF/CSV report export
+- **About**: In-app documentation of the model, parameters, presets, and evaluation methodology with typeset equations
 - **CSV Export**: Download forecast results for further analysis
 
 ## Tech Stack
 
-- **Framework**: Next.js 14 (App Router)
+- **Framework**: Next.js 16 (App Router)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS v4
 - **Charts**: Apache ECharts (via echarts-for-react)
+- **Maps**: Leaflet 2 (pinned alpha; local type declarations in `src/types/leaflet.d.ts`)
+- **Equations**: KaTeX
 - **Testing**: Vitest
 - **Font**: Inter (Google Fonts)
 
@@ -40,14 +46,19 @@ src/
 │   ├── ModelSelector.tsx     # Seismicity model selection
 │   ├── ResultsTable.tsx      # Forecast results display
 │   ├── VisualizationTab.tsx  # ECharts forecast visualizations
+│   ├── EvaluationTab.tsx     # Forecast evaluation against observed seismicity
+│   ├── EvaluationMap.tsx     # Leaflet map of the evaluation region and events
+│   ├── AboutTab.tsx          # Model, parameter, and methodology documentation
 │   └── InfoTooltip.tsx       # Accessible tooltip component
 ├── lib/
-│   ├── api.ts              # GeoNet API client
-│   ├── api.test.ts         # API helper tests
-│   ├── calculations.ts     # Aftershock calculation logic (Omori-Utsu)
-│   └── calculations.test.ts # Calculation tests (Poisson quantiles, Omori integral, forecasts)
+│   ├── api.ts              # GeoNet API client (quake lookup + QuakeSearch catalogue)
+│   ├── calculations.ts     # Aftershock calculation logic (Reasenberg-Jones)
+│   ├── evaluation.ts       # Evaluation: spatial regions, scores, N-test
+│   ├── datetime.ts         # dd/mm/yyyy date-time parsing and formatting
+│   └── *.test.ts           # Vitest unit tests for each module
 └── types/
-    └── index.ts        # TypeScript type definitions and model presets
+    ├── index.ts        # TypeScript type definitions and model presets
+    └── leaflet.d.ts    # Local declarations for Leaflet 2 (no official types yet)
 ```
 
 ## Getting Started
@@ -87,4 +98,4 @@ npm start
 
 - Reasenberg, P.A. & Jones, L.M. (1989, 1994): California aftershock parameters
 - Page, M. et al. (2016): Global tectonic regime parameters
-- Hardebeck, J.L. et al. (2018): Updated California parameters
+- Hardebeck, J.L. et al. (2019): Updated California parameters

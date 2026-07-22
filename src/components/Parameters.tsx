@@ -1,7 +1,8 @@
 'use client';
 
-import { useId, useCallback } from 'react';
+import { useId, useState, useCallback } from 'react';
 import InfoTooltip from './InfoTooltip';
+import { formatNZDateTime, parseNZDateTime } from '@/lib/datetime';
 
 // Tooltip content for each parameter
 const TOOLTIPS = {
@@ -22,8 +23,8 @@ const TOOLTIPS = {
       <p className="mt-1">
         The date and time at which the mainshock occurred. All forecast windows
         are measured relative to this time. Aftershock rates decay with elapsed
-        time in accordance with the Omori&ndash;Utsu law, so an accurate origin
-        time is essential for a reliable forecast.
+        time following the Omori&ndash;Utsu law, so an accurate origin time is
+        needed for a reliable forecast.
       </p>
     </>
   ),
@@ -37,8 +38,8 @@ const TOOLTIPS = {
         time must not precede the mainshock origin time.
       </p>
       <p className="mt-1 text-xs">
-        Note: the longer the interval between the mainshock and the forecast
-        start, the lower the expected aftershock rates.
+        The longer the interval between the mainshock and the forecast start,
+        the lower the expected aftershock rates.
       </p>
     </>
   ),
@@ -90,38 +91,53 @@ interface ParametersProps {
 }
 
 /**
- * Format a Date to datetime-local input format (YYYY-MM-DDTHH:MM) in local timezone
+ * A date-time text field in the day-first convention (dd/mm/yyyy hh:mm, local
+ * time). Native datetime-local inputs render in the OS locale — month-first on
+ * US-configured machines — so an explicit text format is used instead.
+ * The parent receives a valid ISO string, or '' while the text is incomplete.
  */
-function formatDateTimeLocal(dateOrString: Date | string): string {
-  if (!dateOrString) return '';
-  try {
-    const date = typeof dateOrString === 'string' ? new Date(dateOrString) : dateOrString;
-    if (isNaN(date.getTime())) return '';
-    // Format in local timezone for datetime-local input
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  } catch {
-    return '';
-  }
-}
+function DateTimeField({
+  id,
+  isoValue,
+  onChangeISO,
+  className,
+  describedBy,
+}: {
+  id: string;
+  isoValue: string;
+  onChangeISO: (iso: string) => void;
+  className: string;
+  describedBy?: string;
+}) {
+  const [state, setState] = useState({ iso: isoValue, text: formatNZDateTime(isoValue) });
 
-/**
- * Parse datetime-local input value to ISO string
- */
-function parseLocalToISO(localDateTime: string): string {
-  if (!localDateTime) return '';
-  try {
-    // datetime-local is in format YYYY-MM-DDTHH:MM
-    const date = new Date(localDateTime);
-    if (isNaN(date.getTime())) return '';
-    return date.toISOString();
-  } catch {
-    return '';
+  // Re-derive the draft text when the value changes from outside
+  // (the "Now" buttons or a GeoNet load) — the adjust-during-render pattern
+  if (isoValue !== state.iso) {
+    setState({ iso: isoValue, text: formatNZDateTime(isoValue) });
   }
+
+  const handleChange = (text: string) => {
+    const iso = text.trim() === '' ? '' : parseNZDateTime(text) ?? '';
+    setState({ iso, text });
+    onChangeISO(iso);
+  };
+
+  const invalid = state.text.trim() !== '' && parseNZDateTime(state.text) === null;
+
+  return (
+    <input
+      id={id}
+      type="text"
+      inputMode="numeric"
+      placeholder="dd/mm/yyyy hh:mm"
+      value={state.text}
+      onChange={(e) => handleChange(e.target.value)}
+      aria-invalid={invalid || undefined}
+      aria-describedby={describedBy}
+      className={`${className} ${invalid ? 'border-red-500 dark:border-red-500' : ''}`}
+    />
+  );
 }
 
 
@@ -150,14 +166,6 @@ export default function Parameters({
                       dark:bg-gray-800 dark:text-gray-100
                       disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed`;
 
-  const handleQuakeTimeChange = useCallback((value: string) => {
-    onQuakeTimeChange(parseLocalToISO(value));
-  }, [onQuakeTimeChange]);
-
-  const handleStartTimeChange = useCallback((value: string) => {
-    onStartTimeChange(parseLocalToISO(value));
-  }, [onStartTimeChange]);
-
   const setQuakeTimeToNow = useCallback(() => {
     onQuakeTimeChange(new Date().toISOString());
   }, [onQuakeTimeChange]);
@@ -173,7 +181,7 @@ export default function Parameters({
     >
       <legend className="sr-only">Earthquake Parameters</legend>
       <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-        Update any of the parameters below before hitting <em>Calculate</em>
+        Adjust the parameters below, then select <em>Calculate Forecast</em>
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -197,7 +205,7 @@ export default function Parameters({
             aria-describedby={`${baseId}-mag-hint`}
           />
           <p id={`${baseId}-mag-hint`} className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Main shock magnitude (0-10)
+            Mainshock magnitude (0–10)
           </p>
         </div>
         <div>
@@ -209,13 +217,12 @@ export default function Parameters({
             <InfoTooltip content={TOOLTIPS.quakeTime} />
           </label>
           <div className="flex gap-2">
-            <input
+            <DateTimeField
               id={`${baseId}-quake-time`}
-              type="datetime-local"
-              value={formatDateTimeLocal(quakeTime)}
-              onChange={(e) => handleQuakeTimeChange(e.target.value)}
+              isoValue={quakeTime}
+              onChangeISO={onQuakeTimeChange}
               className={inputClass}
-              aria-describedby={`${baseId}-quake-time-hint`}
+              describedBy={`${baseId}-quake-time-hint`}
             />
             <button
               type="button"
@@ -229,7 +236,7 @@ export default function Parameters({
             </button>
           </div>
           <p id={`${baseId}-quake-time-hint`} className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            When the earthquake occurred (local time)
+            When the earthquake occurred (local time, dd/mm/yyyy hh:mm)
           </p>
         </div>
       </div>
@@ -244,13 +251,12 @@ export default function Parameters({
             <InfoTooltip content={TOOLTIPS.startTime} />
           </label>
           <div className="flex gap-2">
-            <input
+            <DateTimeField
               id={`${baseId}-start-time`}
-              type="datetime-local"
-              value={formatDateTimeLocal(startTime)}
-              onChange={(e) => handleStartTimeChange(e.target.value)}
+              isoValue={startTime}
+              onChangeISO={onStartTimeChange}
               className={inputClass}
-              aria-describedby={`${baseId}-start-time-hint`}
+              describedBy={`${baseId}-start-time-hint`}
             />
             <button
               type="button"
@@ -264,7 +270,7 @@ export default function Parameters({
             </button>
           </div>
           <p id={`${baseId}-start-time-hint`} className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            When the forecast period begins (local time)
+            When the forecast period begins (local time, dd/mm/yyyy hh:mm)
           </p>
         </div>
         <div>
@@ -342,7 +348,7 @@ export default function Parameters({
           <InfoTooltip content={TOOLTIPS.magnitudeRanges} />
         </legend>
         <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-          M1 should be highest, M3 should be lowest (e.g., M1=5, M2=4, M3=3)
+          M1 is the highest threshold and M3 the lowest (e.g. M1=5, M2=4, M3=3)
         </p>
         <div className="flex gap-2 flex-wrap">
           {(['m1', 'm2', 'm3'] as const).map((key) => (

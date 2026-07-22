@@ -723,7 +723,7 @@ export default function VisualizationTab({ results, modelName = 'NZ Generic' }: 
             Forecast Visualizations
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            Aftershock probability forecasts for Event {results.quakeId}
+            Aftershock probability forecasts for event {results.quakeId}
           </p>
         </div>
 
@@ -923,7 +923,7 @@ export default function VisualizationTab({ results, modelName = 'NZ Generic' }: 
                           Probability of ≥1
                         </th>
                         <th scope="col" className="px-4 py-2 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Expected Average
+                          Expected number
                         </th>
                         <th scope="col" className="px-4 py-2 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           95% Confidence Range

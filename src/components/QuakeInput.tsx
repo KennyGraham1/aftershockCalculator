@@ -39,7 +39,7 @@ export default function QuakeInput({
   return (
     <div className="mb-6 print:hidden">
       <h1 className="text-2xl font-bold text-red-800 dark:text-red-400 mb-4">
-        AfterShock Calculator
+        Aftershock Calculator
         <span className="block text-sm font-normal text-gray-600 dark:text-gray-400 mt-1">
           For Earth Sciences New Zealand (ESNZ) use only
         </span>
@@ -94,7 +94,7 @@ export default function QuakeInput({
       </div>
 
       <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-        Enter a quake ID then select &quot;Load Quake Info&quot; to retrieve the quake parameters
+        Enter a quake ID, then select &quot;Load Quake Info&quot; to retrieve the event&rsquo;s magnitude, origin time, and location
       </p>
 
       {error && (
@@ -117,7 +117,7 @@ export default function QuakeInput({
         >
           <p className="text-green-700 dark:text-green-400 text-sm">
             ✓ Loaded: M{loadedQuakeInfo.magnitude.toFixed(1)} earthquake at{' '}
-            {new Date(loadedQuakeInfo.time).toLocaleString()}
+            {new Date(loadedQuakeInfo.time).toLocaleString('en-NZ', { dateStyle: 'medium', timeStyle: 'short' })}
           </p>
         </div>
       )}
