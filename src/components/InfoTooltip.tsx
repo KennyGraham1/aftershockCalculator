@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback, useId } from 'react';
+import { createPortal } from 'react-dom';
 
 interface InfoTooltipProps {
   /** The tooltip content - can be plain text or JSX */
@@ -9,31 +10,49 @@ interface InfoTooltipProps {
   className?: string;
 }
 
+const TOOLTIP_WIDTH = 256; // matches w-64
+const VIEWPORT_MARGIN = 8;
+
+interface TooltipPosition {
+  top: number;
+  left: number;
+  arrowLeft: number;
+  placement: 'top' | 'bottom';
+}
+
 /**
  * InfoTooltip - A small info icon that shows a tooltip on hover/click
- * 
- * Uses a floating tooltip positioned to avoid viewport overflow.
+ *
+ * The tooltip is rendered in a document-body portal with viewport-fixed
+ * positioning, so it is never clipped by scrollable or overflow-hidden
+ * ancestors (e.g. horizontally scrolling tables).
  * Accessible with keyboard navigation and screen readers.
  */
 export default function InfoTooltip({ content, className = '' }: InfoTooltipProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [position, setPosition] = useState<'top' | 'bottom'>('top');
-  const tooltipId = useId();
+  const [pos, setPos] = useState<TooltipPosition>({ top: 0, left: 0, arrowLeft: TOOLTIP_WIDTH / 2, placement: 'top' });
   const buttonRef = useRef<HTMLButtonElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const tooltipId = useId();
 
-  // Calculate optimal position based on viewport
+  // Compute a viewport-fixed position anchored to the button
   const updatePosition = useCallback(() => {
-    if (!buttonRef.current) return;
-    const rect = buttonRef.current.getBoundingClientRect();
+    const btn = buttonRef.current;
+    if (!btn) return;
+    const rect = btn.getBoundingClientRect();
     const spaceAbove = rect.top;
     const spaceBelow = window.innerHeight - rect.bottom;
-    
-    // Prefer showing above, but flip if not enough space
-    setPosition(spaceAbove > 150 || spaceAbove > spaceBelow ? 'top' : 'bottom');
+    const placement: 'top' | 'bottom' = spaceAbove > 180 || spaceAbove > spaceBelow ? 'top' : 'bottom';
+
+    let left = rect.left + rect.width / 2 - TOOLTIP_WIDTH / 2;
+    left = Math.max(VIEWPORT_MARGIN, Math.min(left, window.innerWidth - TOOLTIP_WIDTH - VIEWPORT_MARGIN));
+    const top = placement === 'top' ? rect.top - 8 : rect.bottom + 8;
+    const arrowLeft = rect.left + rect.width / 2 - left;
+
+    setPos({ top, left, arrowLeft, placement });
   }, []);
 
-  // Close on outside click
+  // Close on outside click / Escape; keep the position current while open
   useEffect(() => {
     if (!isOpen) return;
 
@@ -57,12 +76,17 @@ export default function InfoTooltip({ content, className = '' }: InfoTooltipProp
 
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('keydown', handleEscape);
-    
+    // Capture-phase scroll listener also catches scrolling containers
+    window.addEventListener('scroll', updatePosition, true);
+    window.addEventListener('resize', updatePosition);
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleEscape);
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
     };
-  }, [isOpen]);
+  }, [isOpen, updatePosition]);
 
   const handleToggle = () => {
     if (!isOpen) {
@@ -101,30 +125,37 @@ export default function InfoTooltip({ content, className = '' }: InfoTooltipProp
         ?
       </button>
 
-      {isOpen && (
+      {isOpen && typeof document !== 'undefined' && createPortal(
         <div
           ref={tooltipRef}
           id={tooltipId}
           role="tooltip"
-          style={{ zIndex: 9999 }}
-          className={`absolute w-64 p-3 text-sm text-gray-700 dark:text-gray-200
-                      bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600
-                      rounded-lg shadow-xl
-                      ${position === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'}
-                      left-1/2 -translate-x-1/2`}
+          style={{
+            position: 'fixed',
+            top: pos.top,
+            left: pos.left,
+            width: TOOLTIP_WIDTH,
+            zIndex: 9999,
+            transform: pos.placement === 'top' ? 'translateY(-100%)' : undefined,
+          }}
+          className="p-3 text-sm text-gray-700 dark:text-gray-200
+                     bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600
+                     rounded-lg shadow-xl"
         >
-          {/* Arrow */}
+          {/* Arrow, kept aligned with the button even when the box is clamped
+              to the viewport edge */}
           <div
-            className={`absolute left-1/2 -translate-x-1/2 w-2 h-2 rotate-45
+            style={{ left: pos.arrowLeft }}
+            className={`absolute -translate-x-1/2 w-2 h-2 rotate-45
                         bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600
-                        ${position === 'top'
+                        ${pos.placement === 'top'
                           ? 'top-full -mt-1 border-b border-r'
                           : 'bottom-full -mb-1 border-t border-l'}`}
           />
           {content}
-        </div>
+        </div>,
+        document.body
       )}
     </span>
   );
 }
-

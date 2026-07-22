@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState, useCallback } from 'react';
+import { useId, useState, useRef, useCallback } from 'react';
 import InfoTooltip from './InfoTooltip';
 import { formatNZDateTime, parseNZDateTime } from '@/lib/datetime';
 
@@ -90,10 +90,21 @@ interface ParametersProps {
   disabled?: boolean;
 }
 
+/** Format an ISO timestamp for a native datetime-local input (local time) */
+function toLocalInputValue(iso: string): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 /**
- * A date-time text field in the day-first convention (dd/mm/yyyy hh:mm, local
+ * A date-time field in the day-first convention (dd/mm/yyyy hh:mm, local
  * time). Native datetime-local inputs render in the OS locale — month-first on
- * US-configured machines — so an explicit text format is used instead.
+ * US-configured machines — so the visible field is an explicit text format.
+ * A calendar button opens the browser's native picker through a hidden
+ * datetime-local input; the chosen value is written back as dd/mm/yyyy hh:mm.
  * The parent receives a valid ISO string, or '' while the text is incomplete.
  */
 function DateTimeField({
@@ -110,6 +121,7 @@ function DateTimeField({
   describedBy?: string;
 }) {
   const [state, setState] = useState({ iso: isoValue, text: formatNZDateTime(isoValue) });
+  const pickerRef = useRef<HTMLInputElement>(null);
 
   // Re-derive the draft text when the value changes from outside
   // (the "Now" buttons or a GeoNet load) — the adjust-during-render pattern
@@ -117,26 +129,78 @@ function DateTimeField({
     setState({ iso: isoValue, text: formatNZDateTime(isoValue) });
   }
 
+  const commitIso = (iso: string) => {
+    setState({ iso, text: formatNZDateTime(iso) });
+    onChangeISO(iso);
+  };
+
   const handleChange = (text: string) => {
     const iso = text.trim() === '' ? '' : parseNZDateTime(text) ?? '';
     setState({ iso, text });
     onChangeISO(iso);
   };
 
+  const openPicker = () => {
+    const el = pickerRef.current;
+    if (!el) return;
+    // Open the calendar at the current value, or now if the field is empty
+    el.value = toLocalInputValue(state.iso) || toLocalInputValue(new Date().toISOString());
+    try {
+      el.showPicker();
+    } catch {
+      // Older browsers without showPicker(): fall back to focusing the input
+      el.focus();
+      el.click();
+    }
+  };
+
+  const handlePicked = (localValue: string) => {
+    if (!localValue) return;
+    const d = new Date(localValue);
+    if (!isNaN(d.getTime())) commitIso(d.toISOString());
+  };
+
   const invalid = state.text.trim() !== '' && parseNZDateTime(state.text) === null;
 
   return (
-    <input
-      id={id}
-      type="text"
-      inputMode="numeric"
-      placeholder="dd/mm/yyyy hh:mm"
-      value={state.text}
-      onChange={(e) => handleChange(e.target.value)}
-      aria-invalid={invalid || undefined}
-      aria-describedby={describedBy}
-      className={`${className} ${invalid ? 'border-red-500 dark:border-red-500' : ''}`}
-    />
+    <div className="relative w-full">
+      <input
+        id={id}
+        type="text"
+        inputMode="numeric"
+        placeholder="dd/mm/yyyy hh:mm"
+        value={state.text}
+        onChange={(e) => handleChange(e.target.value)}
+        aria-invalid={invalid || undefined}
+        aria-describedby={describedBy}
+        className={`${className} pr-10 ${invalid ? 'border-red-500 dark:border-red-500' : ''}`}
+      />
+      <button
+        type="button"
+        onClick={openPicker}
+        aria-label="Choose date and time from a calendar"
+        title="Choose date and time from a calendar"
+        className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 rounded-md
+                   text-gray-400 hover:text-blue-500 hover:bg-gray-100
+                   dark:text-gray-500 dark:hover:text-blue-400 dark:hover:bg-gray-700
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      </button>
+      {/* Hidden native input: provides the calendar UI only; its value is
+          converted to dd/mm/yyyy hh:mm and never shown */}
+      <input
+        ref={pickerRef}
+        type="datetime-local"
+        tabIndex={-1}
+        aria-hidden="true"
+        onChange={(e) => handlePicked(e.target.value)}
+        className="absolute right-0 bottom-0 w-px h-px opacity-0 pointer-events-none"
+      />
+    </div>
   );
 }
 

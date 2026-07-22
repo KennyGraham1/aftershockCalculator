@@ -59,9 +59,8 @@ const SCORE_TOOLTIPS = {
     <>
       <strong>Brier Score</strong>
       <p className="mt-1">
-        (p − o)² for the binary &ldquo;≥1 event&rdquo; forecast, where p is the forecast probability and o the
-        outcome (1 or 0). Ranges from 0 (certain and correct) to 1 (certain and wrong); an uninformative 50%
-        forecast always scores 0.25, so lower than 0.25 indicates a useful forecast.
+        How accurate the &ldquo;chance of one or more aftershocks&rdquo; forecast turned out to be.
+        0 is a perfect forecast and 1 is the worst; below 0.25 is better than guessing.
       </p>
     </>
   ),
@@ -69,19 +68,19 @@ const SCORE_TOOLTIPS = {
     <>
       <strong>Log Score</strong>
       <p className="mt-1">
-        −ln p if an event occurred, −ln(1&nbsp;−&nbsp;p) if not. A perfect forecast scores 0, a 50% forecast scores
-        ≈0.69, and confident wrong forecasts are penalised heavily (capped near 13.8). Differences in average log
-        score between models measure information gain. Meaningful when averaged over many forecasts.
+        How well the forecast probability matched what actually happened, punishing confident
+        wrong forecasts hardest. 0 is perfect; lower is better. Best judged over many forecasts,
+        not a single window.
       </p>
     </>
   ),
   nTest: (
     <>
-      <strong>N-test (Zechar 2010)</strong>
+      <strong>N-test</strong>
       <p className="mt-1">
-        Two-sided Poisson consistency test at the 5% level: is the observed count plausible given the forecast
-        expectation? &ldquo;Overprediction&rdquo; means significantly fewer events occurred than forecast;
-        &ldquo;underprediction&rdquo; means significantly more.
+        Whether the number of observed aftershocks is consistent with the number forecast.
+        &ldquo;Overprediction&rdquo; means fewer occurred than forecast; &ldquo;underprediction&rdquo;
+        means more occurred than forecast.
       </p>
     </>
   ),
@@ -560,7 +559,6 @@ export default function EvaluationTab({ results, modelName = 'NZ Generic' }: Eva
                     <th scope="col" className="px-3 py-2 text-center">Expected</th>
                     <th scope="col" className="px-3 py-2 text-center">95% range</th>
                     <th scope="col" className="px-3 py-2 text-center">P(≥1)</th>
-                    <th scope="col" className="px-3 py-2 text-center">Occurred</th>
                     <th scope="col" className="px-3 py-2 text-center">
                       <span className="flex items-center justify-center gap-1">
                         Brier
@@ -608,7 +606,6 @@ export default function EvaluationTab({ results, modelName = 'NZ Generic' }: Eva
                           <td className="px-3 py-2 text-center font-mono">
                             {row.scores.probability < 0.01 ? '<1%' : row.scores.probability > 0.99 ? '>99%' : `${Math.round(row.scores.probability * 100)}%`}
                           </td>
-                          <td className="px-3 py-2 text-center">{row.scores.occurred ? 'Yes' : 'No'}</td>
                           <td className="px-3 py-2 text-center font-mono">{formatScore(row.scores.brier)}</td>
                           <td className="px-3 py-2 text-center font-mono">{formatScore(row.scores.logScoreBinary)}</td>
                           <td className="px-3 py-2 text-center">
@@ -625,7 +622,7 @@ export default function EvaluationTab({ results, modelName = 'NZ Generic' }: Eva
                           </td>
                         </>
                       ) : (
-                        <td colSpan={8} className="px-3 py-2 text-center text-gray-400">not yet observable</td>
+                        <td colSpan={7} className="px-3 py-2 text-center text-gray-400">not yet observable</td>
                       )}
                     </tr>
                   ))}
