@@ -27,7 +27,7 @@ const PARAM_INFO: Record<keyof ModelParameters, { label: string; description: st
     description: 'Productivity parameter',
     tooltip: (
       <>
-        <strong>Productivity Parameter (<em>a</em>)</strong>
+        <strong>Productivity Parameter (a)</strong>
         <p className="mt-1">
           Sets the overall rate of aftershock occurrence for a sequence. More
           negative values correspond to lower aftershock productivity. Published
@@ -41,7 +41,7 @@ const PARAM_INFO: Record<keyof ModelParameters, { label: string; description: st
     description: 'Magnitude scaling',
     tooltip: (
       <>
-        <strong>Gutenberg&ndash;Richter <em>b</em>-value</strong>
+        <strong>Gutenberg&ndash;Richter b-value</strong>
         <p className="mt-1">
           Governs the relative frequency of small versus large events. A value
           of 1.0 implies a tenfold increase in event frequency for each unit
@@ -56,7 +56,7 @@ const PARAM_INFO: Record<keyof ModelParameters, { label: string; description: st
     description: 'Omori c-value',
     tooltip: (
       <>
-        <strong>Omori <em>c</em>-value (days)</strong>
+        <strong>Omori c-value (days)</strong>
         <p className="mt-1">
           A short time constant that regularises the aftershock rate in the
           period immediately following the mainshock. Smaller values imply
@@ -71,7 +71,7 @@ const PARAM_INFO: Record<keyof ModelParameters, { label: string; description: st
     description: 'Omori p-value',
     tooltip: (
       <>
-        <strong>Omori <em>p</em>-value (decay exponent)</strong>
+        <strong>Omori p-value (decay exponent)</strong>
         <p className="mt-1">
           The exponent governing the temporal decay of aftershock rates.
           A value of 1 corresponds to classical Omori decay; values above 1
@@ -83,24 +83,25 @@ const PARAM_INFO: Record<keyof ModelParameters, { label: string; description: st
   },
 };
 
-const SEISMIC_MODEL_TOOLTIP = (
+const MODEL_TOOLTIP = (
   <>
-    <strong>Seismic Model Selection</strong>
+    <strong>Forecast Model Selection</strong>
     <p className="mt-1">
-      Aftershock behaviour varies systematically between tectonic settings.
-      Select the parameter set calibrated for the region most representative
-      of the mainshock:
+      Aftershock behaviour varies between tectonic settings. Select the
+      parameter set calibrated for the region most representative of the
+      mainshock:
     </p>
     <ul className="mt-1 ml-3 text-xs list-disc">
       <li><strong>NZ Generic:</strong> New Zealand crustal earthquakes (ESNZ calibration)</li>
       <li><strong>Subduction Zone:</strong> Hikurangi/Puysegur plate-interface events</li>
       <li><strong>California (ACR):</strong> Reasenberg &amp; Jones (1989) generic parameters</li>
       <li><strong>Stable Continental:</strong> low-seismicity intraplate regions</li>
+      <li><strong>Custom:</strong> enter your own parameter values</li>
     </ul>
   </>
 );
 
-const STORAGE_KEY = 'aftershock-model-expanded';
+const STORAGE_KEY = 'aftershock-params-expanded';
 
 /**
  * Read initial expanded state from localStorage (client-side only)
@@ -117,11 +118,19 @@ function getInitialExpandedState(): boolean {
   }
 }
 
+function persistExpandedState(value: boolean) {
+  try {
+    localStorage.setItem(STORAGE_KEY, String(value));
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
 /** Chevron icon component for expand/collapse indicator */
 function ChevronIcon({ expanded }: { expanded: boolean }) {
   return (
     <svg
-      className={`w-5 h-5 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
+      className={`w-4 h-4 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -140,31 +149,33 @@ export default function ModelSelector({
 }: ModelSelectorProps) {
   const baseId = useId();
   const isCustom = modelType === 'custom';
+  const activeParams = isCustom ? customParams : MODEL_PRESETS[modelType];
 
-  // Initialize collapsed state from localStorage (lazy initializer avoids hydration issues)
+  // Parameter-details disclosure, persisted across visits
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isHydrated, setIsHydrated] = useState(false);
 
-  // Hydrate client-side state after mount
-  // This is a legitimate use of setState in useEffect for client-side hydration
+  // Hydrate the persisted state after mount
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsExpanded(getInitialExpandedState());
-    setIsHydrated(true);
   }, []);
 
-  // Persist state to localStorage when it changes
   const toggleExpanded = useCallback(() => {
     setIsExpanded(prev => {
-      const newValue = !prev;
-      try {
-        localStorage.setItem(STORAGE_KEY, String(newValue));
-      } catch {
-        // Ignore localStorage errors
-      }
-      return newValue;
+      const next = !prev;
+      persistExpandedState(next);
+      return next;
     });
   }, []);
+
+  const handleModelSelect = (type: ModelType) => {
+    onModelChange(type);
+    // Editing parameters is the point of Custom, so open them automatically
+    if (type === 'custom' && !isExpanded) {
+      setIsExpanded(true);
+      persistExpandedState(true);
+    }
+  };
 
   const handleParamChange = (key: keyof ModelParameters, value: string) => {
     const numValue = parseFloat(value);
@@ -174,128 +185,107 @@ export default function ModelSelector({
     });
   };
 
-  // Get current model label for summary display
-  const currentModelLabel = MODEL_OPTIONS.find(m => m.type === modelType)?.label ?? 'Unknown';
-
   return (
-    <div className="mb-6 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 print:hidden">
-      {/* Disclosure Header - Split into label area and expand button */}
-      <div className="px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Seismic Model
-          </span>
-          <InfoTooltip content={SEISMIC_MODEL_TOOLTIP} />
-          <span className="text-sm px-2 py-0.5 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full">
-            {currentModelLabel}
-          </span>
-        </div>
+    <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 print:hidden">
+      <div className="flex items-center gap-2 mb-3">
+        <span id={`${baseId}-heading`} className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          Set Forecast Model &amp; Parameters
+        </span>
+        <InfoTooltip content={MODEL_TOOLTIP} />
+      </div>
+
+      {/* Model choices, always visible */}
+      <div
+        role="radiogroup"
+        aria-labelledby={`${baseId}-heading`}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2"
+      >
+        {MODEL_OPTIONS.map(({ type, label, description }) => {
+          const selected = modelType === type;
+          return (
+            <label
+              key={type}
+              className={`cursor-pointer rounded-lg border p-3 transition-colors
+                          focus-within:ring-2 focus-within:ring-blue-500
+                          ${selected
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 ring-1 ring-blue-500'
+                            : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-blue-300 dark:hover:border-blue-600'}`}
+            >
+              <input
+                type="radio"
+                name={`${baseId}-model`}
+                checked={selected}
+                onChange={() => handleModelSelect(type)}
+                className="sr-only"
+              />
+              <span className={`block text-sm font-semibold ${selected ? 'text-blue-700 dark:text-blue-300' : 'text-gray-900 dark:text-gray-100'}`}>
+                {label}
+              </span>
+              <span className="block mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                {description}
+              </span>
+            </label>
+          );
+        })}
+      </div>
+
+      {/* Parameter values: summary always visible, inputs behind a disclosure */}
+      <div className="mt-3 border-t border-gray-200 dark:border-gray-600 pt-3">
         <button
           type="button"
           onClick={toggleExpanded}
           aria-expanded={isExpanded}
-          aria-controls={`${baseId}-content`}
-          className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700
-                     focus:outline-none focus:ring-2 focus:ring-blue-500
-                     transition-colors"
-          aria-label={isExpanded ? 'Collapse model options' : 'Expand model options'}
+          aria-controls={`${baseId}-params`}
+          className="w-full flex items-center justify-between gap-2 text-sm text-gray-700 dark:text-gray-300
+                     rounded-md px-1 py-1 hover:text-gray-900 dark:hover:text-gray-100
+                     focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
+          <span className="font-medium text-left">
+            Model parameters{' '}
+            <span className="font-mono font-normal text-gray-500 dark:text-gray-400">
+              a = {activeParams.a} · b = {activeParams.b} · c = {activeParams.c} · p = {activeParams.p}
+            </span>
+            {!isCustom && <span className="font-normal text-gray-500 dark:text-gray-400"> (read-only)</span>}
+          </span>
           <ChevronIcon expanded={isExpanded} />
         </button>
-      </div>
 
-      {/* Collapsible Content */}
-      <div
-        id={`${baseId}-content`}
-        role="region"
-        aria-labelledby={`${baseId}-heading`}
-        className={`overflow-hidden transition-all duration-300 ease-in-out ${
-          isHydrated
-            ? isExpanded
-              ? 'max-h-[600px] opacity-100'
-              : 'max-h-0 opacity-0'
-            : 'max-h-0 opacity-0'
-        }`}
-      >
-        <div className="px-4 pb-4 pt-2">
-          {/* Model Selection Radio Group */}
-          <div
-            className="space-y-2 mb-4"
-            role="radiogroup"
-            aria-label="Select seismic model"
-          >
-            {MODEL_OPTIONS.map(({ type, label, description }) => (
-              <label
-                key={type}
-                className={`flex items-start gap-3 cursor-pointer p-2 rounded-md transition-colors
-                           ${modelType === type
-                             ? 'bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700'
-                             : 'hover:bg-gray-100 dark:hover:bg-gray-700 border border-transparent'}`}
-              >
+        {isExpanded && (
+          <div id={`${baseId}-params`} className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
+            {(Object.keys(PARAM_INFO) as (keyof ModelParameters)[]).map((param) => (
+              <div key={param}>
+                <label
+                  htmlFor={`${baseId}-${param}`}
+                  className="flex items-center gap-1 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >
+                  {PARAM_INFO[param].label}
+                  <InfoTooltip content={PARAM_INFO[param].tooltip} />
+                </label>
                 <input
-                  type="radio"
-                  name={`${baseId}-model`}
-                  checked={modelType === type}
-                  onChange={() => onModelChange(type)}
-                  className="w-4 h-4 mt-0.5 accent-blue-500"
-                  aria-describedby={`${baseId}-${type}-desc`}
+                  id={`${baseId}-${param}`}
+                  type="number"
+                  step="0.001"
+                  value={activeParams[param]}
+                  onChange={(e) => handleParamChange(param, e.target.value)}
+                  disabled={!isCustom}
+                  aria-describedby={`${baseId}-${param}-desc`}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md
+                             focus:outline-none focus:ring-2 focus:ring-blue-500
+                             disabled:bg-gray-100 dark:disabled:bg-gray-700
+                             disabled:text-gray-600 dark:disabled:text-gray-400
+                             dark:bg-gray-800 dark:text-gray-100"
                 />
-                <div>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">{label}</span>
-                  <p
-                    id={`${baseId}-${type}-desc`}
-                    className="text-sm text-gray-500 dark:text-gray-400"
-                  >
-                    {description}
-                  </p>
-                </div>
-              </label>
+                <p
+                  id={`${baseId}-${param}-desc`}
+                  className="mt-1 text-xs text-gray-500 dark:text-gray-400"
+                >
+                  {PARAM_INFO[param].description}
+                </p>
+              </div>
             ))}
           </div>
-
-          {/* Model Parameters */}
-          <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              Model Parameters {!isCustom && <span className="text-gray-500">(read-only)</span>}
-            </h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {(Object.keys(PARAM_INFO) as (keyof ModelParameters)[]).map((param) => (
-                <div key={param}>
-                  <label
-                    htmlFor={`${baseId}-${param}`}
-                    className="flex items-center gap-1 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                  >
-                    {PARAM_INFO[param].label}
-                    <InfoTooltip content={PARAM_INFO[param].tooltip} />
-                  </label>
-                  <input
-                    id={`${baseId}-${param}`}
-                    type="number"
-                    step="0.001"
-                    value={isCustom ? customParams[param] : MODEL_PRESETS[modelType][param]}
-                    onChange={(e) => handleParamChange(param, e.target.value)}
-                    disabled={!isCustom}
-                    aria-describedby={`${baseId}-${param}-desc`}
-                    tabIndex={isExpanded ? 0 : -1}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md
-                               focus:outline-none focus:ring-2 focus:ring-blue-500
-                               disabled:bg-gray-100 dark:disabled:bg-gray-700
-                               disabled:text-gray-600 dark:disabled:text-gray-400
-                               dark:bg-gray-800 dark:text-gray-100"
-                  />
-                  <p
-                    id={`${baseId}-${param}-desc`}
-                    className="mt-1 text-xs text-gray-500 dark:text-gray-400"
-                  >
-                    {PARAM_INFO[param].description}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
 }
-

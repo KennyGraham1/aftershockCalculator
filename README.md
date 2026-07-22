@@ -5,7 +5,7 @@ A web application for generating and evaluating earthquake aftershock forecasts 
 ## Features
 
 - **GeoNet Integration**: Fetch earthquake data directly from the GeoNet API using quake IDs
-- **Multiple Seismicity Models**: Pre-configured parameters for different tectonic settings:
+- **Multiple Forecast Models**: Pre-configured parameters for different tectonic settings:
   - NZ Generic (New Zealand active continental region)
   - Subduction Zone (Hikurangi/Puysegur)
   - California/ACR (Reasenberg & Jones, 1989)
@@ -43,7 +43,7 @@ src/
 ├── components/
 │   ├── QuakeInput.tsx        # Earthquake ID input and data fetching
 │   ├── Parameters.tsx        # Magnitude and duration configuration
-│   ├── ModelSelector.tsx     # Seismicity model selection
+│   ├── ModelSelector.tsx     # Forecast model selection
 │   ├── ResultsTable.tsx      # Forecast results display
 │   ├── VisualizationTab.tsx  # ECharts forecast visualizations
 │   ├── EvaluationTab.tsx     # Forecast evaluation against observed seismicity

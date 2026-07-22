@@ -126,11 +126,11 @@ export const MODEL_INFO: Record<ModelType, { name: string; description: string }
   },
   california: {
     name: 'California (ACR)',
-    description: 'Active Continental Region - Reasenberg & Jones (1989)'
+    description: 'Active continental region, Reasenberg & Jones (1989)'
   },
   scr: {
     name: 'Stable Continental',
-    description: 'Stable Continental Region - Page et al. (2016)'
+    description: 'Stable continental region, Page et al. (2016)'
   },
   custom: {
     name: 'Custom',
