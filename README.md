@@ -94,6 +94,16 @@ npm run build
 npm start
 ```
 
+## Documentation
+
+Technical documentation lives in [docs/](docs/README.md):
+
+- [Architecture](docs/architecture.md) — component map, the results-snapshot design, layering rules
+- [The forecast computation](docs/forecast-model.md) — validation, model, bins, ranges, formatting
+- [Likely-number computation](docs/likely-number-computation.md) — from model parameters to the Poisson outcome bars
+- [Evaluation methodology](docs/evaluation-methodology.md) — regions, catalogue, scores, caveats
+- [Date and time handling](docs/date-time-handling.md) — why dd/mm/yyyy is enforced and how
+
 ## Scientific References
 
 - Reasenberg, P.A. & Jones, L.M. (1989, 1994): California aftershock parameters

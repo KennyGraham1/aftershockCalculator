@@ -16,6 +16,22 @@ import { CanvasRenderer } from 'echarts/renderers';
 import type { EChartsCoreOption } from 'echarts/core';
 import type { CalculationResults } from '@/types';
 import { qpois, calculateOmoriIntegral, calculateExpectedAftershocks } from '@/lib/calculations';
+import InfoTooltip from './InfoTooltip';
+
+// Explains the Poisson outcome chart; shown as a tooltip on its title
+const LIKELY_NUMBER_TOOLTIP = (
+  <>
+    <strong>How these probabilities are computed</strong>
+    <p className="mt-1">
+      The model gives an expected number of aftershocks for the selected
+      magnitude threshold and period. Treating the actual count as
+      Poisson-distributed around that expectation gives the chance of exactly
+      1, 2, 3, or 4 events; &ldquo;5+&rdquo; is the remaining probability of
+      five or more. The zero-event outcome is not drawn, so the bars sum to
+      the headline probability of one or more aftershocks.
+    </p>
+  </>
+);
 
 // Register only the ECharts modules we use (keeps the bundle small)
 echarts.use([
@@ -424,14 +440,11 @@ export default function VisualizationTab({ results, modelName = 'NZ Generic' }: 
       ? (prefersDark ? '#fbbf24' : '#d97706')
       : (prefersDark ? '#60a5fa' : '#2563eb');
 
+  // Title and subtitle for this chart are rendered as HTML above the canvas so
+  // the title can carry an InfoTooltip explaining the computation
   const likelyNumberOptions: EChartsCoreOption = {
     backgroundColor: 'transparent',
-    title: {
-      ...CHART_TITLE_STYLE,
-      text: `Likely Number of ${selectedOafData.label} Aftershocks`,
-      subtext: `Within ${effectiveDuration} ${effectiveDuration === 1 ? 'day' : 'days'}; the bars sum to the reported ${selectedProb < 1 ? '<1' : selectedProb > 99 ? '>99' : Math.round(selectedProb)}% probability of one or more events`,
-    },
-    grid: { top: 85, bottom: 55, left: 65, right: 25 },
+    grid: { top: 25, bottom: 55, left: 65, right: 25 },
     xAxis: categoryAxis(poissonData.map(d => d.name), 'Number of Aftershocks'),
     yAxis: { ...percentAxis('Probability (%)'), max: undefined },
     tooltip: {
@@ -972,7 +985,17 @@ export default function VisualizationTab({ results, modelName = 'NZ Generic' }: 
 
           {/* Likely Number of Aftershocks Bar Chart */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-            <ReactEChartsCore echarts={echarts} option={likelyNumberOptions} notMerge style={{ height: 320, width: '100%' }} />
+            <div className="text-center mb-1">
+              <h3 className="inline-flex items-center justify-center gap-1.5 text-[15px] font-bold text-gray-500 dark:text-gray-400">
+                Likely Number of {selectedOafData.label} Aftershocks
+                <InfoTooltip content={LIKELY_NUMBER_TOOLTIP} />
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Within {effectiveDuration} {effectiveDuration === 1 ? 'day' : 'days'}; the bars sum to the reported{' '}
+                {selectedProb < 1 ? '<1' : selectedProb > 99 ? '>99' : Math.round(selectedProb)}% probability of one or more events
+              </p>
+            </div>
+            <ReactEChartsCore echarts={echarts} option={likelyNumberOptions} notMerge style={{ height: 290, width: '100%' }} />
           </div>
         </div>
       ) : (
