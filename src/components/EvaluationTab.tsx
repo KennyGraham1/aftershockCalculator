@@ -127,6 +127,19 @@ export default function EvaluationTab({ results, modelName = 'NZ Generic' }: Eva
   // since the query envelope and magnitude floor may no longer match
   const [catalogFor, setCatalogFor] = useState<CalculationResults | null>(null);
   const [selectedBin, setSelectedBin] = useState<BinKey>('m3');
+  // While true, the diagnostic charts render at print dimensions so they fit
+  // side by side on a landscape page (CSS cannot resize a canvas chart)
+  const [printMode, setPrintMode] = useState(false);
+
+  const handleExportPdf = useCallback(() => {
+    setPrintMode(true);
+    // Give React and ECharts a moment to re-render at print size, then open
+    // the dialog; restore the screen size once it closes
+    setTimeout(() => {
+      window.print();
+      setPrintMode(false);
+    }, 350);
+  }, []);
 
   const magVals = useMemo(() => {
     if (!results) return null;
@@ -424,7 +437,7 @@ export default function EvaluationTab({ results, modelName = 'NZ Generic' }: Eva
 
   return (
     <div className="mt-6 space-y-6" role="region" aria-label="Forecast evaluation">
-      <div>
+      <div className="print:hidden">
         <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Forecast Evaluation</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
           Tests the {modelName} forecast for event {results.quakeId} against the observed GeoNet catalogue
@@ -432,7 +445,7 @@ export default function EvaluationTab({ results, modelName = 'NZ Generic' }: Eva
       </div>
 
       {/* Configuration */}
-      <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+      <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm print:hidden">
         <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-3">
           Spatial Evaluation Region
         </h3>
@@ -542,7 +555,7 @@ export default function EvaluationTab({ results, modelName = 'NZ Generic' }: Eva
           )}
 
           {/* Summary table */}
-          <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+          <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm eval-print-card">
             <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-3">
               Evaluation Summary
               <span className="ml-2 font-normal normal-case text-gray-500 dark:text-gray-400">
@@ -550,7 +563,7 @@ export default function EvaluationTab({ results, modelName = 'NZ Generic' }: Eva
               </span>
             </h3>
             <div className="overflow-x-auto">
-              <table className="min-w-full text-sm border-collapse">
+              <table className="min-w-full text-sm border-collapse print-eval-table">
                 <thead>
                   <tr className="bg-gray-50 dark:bg-gray-900 text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     <th scope="col" className="px-3 py-2 text-left">Window</th>
@@ -637,7 +650,7 @@ export default function EvaluationTab({ results, modelName = 'NZ Generic' }: Eva
             {/* Export actions */}
             <div className="mt-4 flex gap-2 flex-wrap print:hidden">
               <button
-                onClick={() => window.print()}
+                onClick={handleExportPdf}
                 className="px-4 py-2 bg-gray-500 text-white text-sm rounded-md hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
                 aria-label="Export the evaluation report as PDF via the print dialog"
                 title="Opens the print dialog; choose 'Save as PDF' as the destination"
@@ -656,7 +669,7 @@ export default function EvaluationTab({ results, modelName = 'NZ Generic' }: Eva
 
           {/* Map of the evaluation region and observed events */}
           {evaluatedRegion && (
-            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm eval-print-card">
               <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1">
                 Evaluation Region &amp; Observed Events
               </h3>
@@ -681,10 +694,10 @@ export default function EvaluationTab({ results, modelName = 'NZ Generic' }: Eva
           )}
 
           {/* Charts with bin selector */}
-          <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+          <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm eval-print-card">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Diagnostic Plots</h3>
-              <div>
+              <div className="print:hidden">
                 <label htmlFor="eval-bin" className="mr-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
                   Magnitude bin
                 </label>
@@ -700,12 +713,12 @@ export default function EvaluationTab({ results, modelName = 'NZ Generic' }: Eva
                 </select>
               </div>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 eval-charts-grid">
               {obsVsExpOptions && (
-                <ReactEChartsCore echarts={echarts} option={obsVsExpOptions} notMerge style={{ height: 340, width: '100%' }} />
+                <ReactEChartsCore echarts={echarts} option={obsVsExpOptions} notMerge style={printMode ? { height: 280, width: 430 } : { height: 340, width: '100%' }} />
               )}
               {cumulativeOptions && (
-                <ReactEChartsCore echarts={echarts} option={cumulativeOptions} notMerge style={{ height: 340, width: '100%' }} />
+                <ReactEChartsCore echarts={echarts} option={cumulativeOptions} notMerge style={printMode ? { height: 280, width: 430 } : { height: 340, width: '100%' }} />
               )}
             </div>
           </div>
@@ -713,7 +726,7 @@ export default function EvaluationTab({ results, modelName = 'NZ Generic' }: Eva
       )}
 
       {/* Assumptions & caveats */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800 eval-print-card">
         <h3 className="font-semibold text-blue-800 dark:text-blue-300 mb-2">Assumptions &amp; Caveats</h3>
         <ul className="text-sm text-blue-700 dark:text-blue-400 space-y-1 list-disc list-inside">
           <li>Spatial scaling: Wells &amp; Coppersmith (1994) subsurface rupture length, log₁₀L = −2.44 + 0.59M (all slip types), radius = k × L, floored at 10 km.</li>
@@ -725,6 +738,17 @@ export default function EvaluationTab({ results, modelName = 'NZ Generic' }: Eva
           ))}
         </ul>
       </div>
+
+      {/* Print-only report footer */}
+      {evaluation && catalog && (
+        <div className="hidden print:block print-footer">
+          <p>
+            Generated by the Aftershock Calculator • Earth Sciences New Zealand (ESNZ) •
+            Forecast model: Reasenberg&ndash;Jones • Observed data: GeoNet QuakeSearch •
+            Basemap: &copy; OpenStreetMap contributors, &copy; CARTO
+          </p>
+        </div>
+      )}
     </div>
   );
 }

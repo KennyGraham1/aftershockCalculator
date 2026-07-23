@@ -139,4 +139,71 @@ body {
     box-shadow: none !important;
     border-radius: 0 !important;
   }
+
+  /* ===== Evaluation report ===== */
+
+  /* Report sections: white cards with a hairline border, never split
+     across pages, all text forced to black (dark mode included) */
+  .eval-print-card {
+    background: white !important;
+    border: 1pt solid #bbb !important;
+    page-break-inside: avoid;
+    padding: 10pt !important;
+    margin-bottom: 12pt;
+  }
+  .eval-print-card,
+  .eval-print-card * {
+    color: black !important;
+  }
+  .eval-print-card h3 {
+    color: #8D0020 !important;
+    font-size: 12pt;
+    text-transform: none;
+    letter-spacing: 0;
+    margin-bottom: 6pt;
+  }
+
+  /* Evaluation summary table, styled to match the forecast report */
+  .print-eval-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9pt;
+  }
+  .print-eval-table th,
+  .print-eval-table td {
+    border: 1pt solid #333;
+    padding: 4pt 6pt;
+    text-align: center;
+  }
+  .print-eval-table thead th {
+    background-color: #8D0020 !important;
+    color: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    font-size: 8.5pt;
+  }
+  .print-eval-table tbody tr:nth-child(even) {
+    background-color: #f9f9f9 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Map: keep the tiles and overlays, hide interactive controls */
+  .leaflet-control-container {
+    display: none !important;
+  }
+
+  /* Diagnostic plots: side by side on the landscape page (the screen layout
+     only goes two-column above 1024px, which print width does not reach).
+     The charts themselves are re-rendered at print dimensions by the Export
+     button before the dialog opens; overflow-hidden is a safety net for
+     prints triggered without it (e.g. Ctrl+P). */
+  .eval-charts-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12pt !important;
+  }
+  .eval-charts-grid > div {
+    overflow: hidden;
+  }
 }
